@@ -1,0 +1,72 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Autonomous QA Mission Control</title>
+    <style>
+      :root { font-family: Inter, system-ui, sans-serif; color: #172033; background: #f5f7fb; }
+      body { max-width: 980px; margin: 0 auto; padding: 2rem 1rem; }
+      .panel, .run { background: white; border: 1px solid #d9dfeb; border-radius: 10px; padding: 1.25rem; margin: 1rem 0; box-shadow: 0 2px 8px #18264a0d; }
+      h1 { margin-bottom: .25rem; } .muted { color: #68738a; }
+      label { display: block; font-weight: 650; margin-top: .9rem; }
+      input, textarea { box-sizing: border-box; width: 100%; margin-top: .35rem; padding: .7rem; border: 1px solid #aeb9cb; border-radius: 6px; font: inherit; }
+      textarea { min-height: 5rem; resize: vertical; }
+      button, .button { display: inline-block; margin-top: 1rem; padding: .7rem 1rem; border: 0; border-radius: 6px; color: white; background: #2457d6; cursor: pointer; text-decoration: none; }
+      .status { font-weight: 700; } .completed { color: #087443; } .failed { color: #a30000; }
+      .finding { background: #fff4cc; border: 1px solid #e8ca5b; padding: .8rem; border-radius: 6px; margin-top: .8rem; }
+      .metrics { display: flex; gap: 1.5rem; flex-wrap: wrap; } .metric strong { font-size: 1.5rem; display: block; }
+      code { word-break: break-all; }
+    </style>
+  </head>
+  <body>
+    <h1>Autonomous QA Mission Control</h1>
+    <p class="muted">Submit a local web app, run a bounded browser journey, and inspect evidence-backed findings.</p>
+    <section class="panel">
+      <form id="run-form">
+        <label for="app-url">Application URL</label>
+        <input id="app-url" value="http://127.0.0.1:4173" required>
+        <label for="description">What should the application do?</label>
+        <textarea id="description">The app should let a customer add a product, see an accurate total, and complete checkout.</textarea>
+        <button type="submit">Start QA run</button>
+        <span id="form-message" class="muted"></span>
+      </form>
+    </section>
+    <section id="runs"></section>
+    <script>
+      const form = document.querySelector("#run-form");
+      const message = document.querySelector("#form-message");
+      const runs = document.querySelector("#runs");
+      form.addEventListener("submit", async (event) => {
+        event.preventDefault();
+        message.textContent = "Starting...";
+        const response = await fetch("/api/runs", {
+          method: "POST",
+          headers: { "content-type": "application/json" },
+          body: JSON.stringify({ appUrl: document.querySelector("#app-url").value, description: document.querySelector("#description").value })
+        });
+        const data = await response.json();
+        message.textContent = response.ok ? "Run queued." : data.error;
+        refresh();
+      });
+      async function refresh() {
+        const response = await fetch("/api/runs");
+        const data = await response.json();
+        runs.innerHTML = data.length ? data.map(renderRun).join("") : '<section class="panel muted">No runs yet.</section>';
+      }
+      function renderRun(run) {
+        const summary = run.summary ? `<div class="metrics">
+          <div class="metric"><strong>${run.summary.passedJourneys}</strong> journey passed</div>
+          <div class="metric"><strong>${run.summary.confirmedBugs}</strong> confirmed bug(s)</div>
+          <div class="metric"><strong>${run.summary.tests}</strong> planned test(s)</div>
+        </div>
+        <a class="button" href="/api/runs/${run.id}/report" target="_blank">Open evidence report</a>` : "";
+        return `<article class="run"><h2>Run <code>${run.id}</code></h2>
+          <p><strong>Target:</strong> ${run.appUrl}</p>
+          <p class="status ${run.status}">${run.status}</p>${run.error ? `<p class="failed">${run.error}</p>` : ""}${summary}</article>`;
+      }
+      refresh();
+      setInterval(refresh, 1500);
+    </script>
+  </body>
+</html>

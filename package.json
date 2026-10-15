@@ -1,0 +1,20 @@
+{
+  "name": "autonomous-qa-stage2-prototype",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Stage-2 prototype for an evidence-backed autonomous QA engineer.",
+  "scripts": {
+    "start:app": "node sample-app/server.js",
+    "start:dashboard": "node api/server.js",
+    "qa": "node qa/run.js",
+    "demo": "node qa/demo.js",
+    "test:generated": "playwright test generated/cart-journey.spec.js"
+  },
+  "dependencies": {
+    "express": "^5.1.0",
+    "zod": "^4.1.12"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.56.1"
+  }
+}
