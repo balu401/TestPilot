@@ -3,70 +3,79 @@
   <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>Autonomous QA Mission Control</title>
+    <title>TestPilot AI - Mission Control</title>
+    <link rel="icon" href="/favicon.svg" type="image/svg+xml">
     <style>
-      :root { font-family: Inter, system-ui, sans-serif; color: #172033; background: #f5f7fb; }
-      body { max-width: 980px; margin: 0 auto; padding: 2rem 1rem; }
-      .panel, .run { background: white; border: 1px solid #d9dfeb; border-radius: 10px; padding: 1.25rem; margin: 1rem 0; box-shadow: 0 2px 8px #18264a0d; }
-      h1 { margin-bottom: .25rem; } .muted { color: #68738a; }
-      label { display: block; font-weight: 650; margin-top: .9rem; }
-      input, textarea { box-sizing: border-box; width: 100%; margin-top: .35rem; padding: .7rem; border: 1px solid #aeb9cb; border-radius: 6px; font: inherit; }
-      textarea { min-height: 5rem; resize: vertical; }
-      button, .button { display: inline-block; margin-top: 1rem; padding: .7rem 1rem; border: 0; border-radius: 6px; color: white; background: #2457d6; cursor: pointer; text-decoration: none; }
-      .status { font-weight: 700; } .completed { color: #087443; } .failed { color: #a30000; }
-      .finding { background: #fff4cc; border: 1px solid #e8ca5b; padding: .8rem; border-radius: 6px; margin-top: .8rem; }
-      .metrics { display: flex; gap: 1.5rem; flex-wrap: wrap; } .metric strong { font-size: 1.5rem; display: block; }
-      code { word-break: break-all; }
+      :root { font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; color: #16243a; background: #e9edf3; }
+      * { box-sizing: border-box; }
+      body { min-height: 100vh; margin: 0; background: #e9edf3; }
+      .shell { position: relative; width: min(1120px, calc(100% - 32px)); margin: 24px auto; background: #fbfcfe; border: 1px solid #d5dce5; border-radius: 5px; box-shadow: 0 24px 60px #26374a22; overflow: hidden; }
+      header { height: 58px; display: flex; align-items: center; justify-content: space-between; padding: 0 28px; border-bottom: 1px solid #e5e9ef; background: #fff; }
+      .brand { display: flex; align-items: center; gap: 9px; font-size: 13px; font-weight: 700; }
+      .brand-mark { width: 24px; height: 24px; display: grid; place-items: center; color: #fff; background: #2470d8; border-radius: 7px; font-size: 13px; box-shadow: 0 3px 8px #2470d84d; }
+      nav { display: flex; gap: 24px; margin-left: 26px; flex: 1; } nav a { color: #748095; text-decoration: none; font-size: 11px; } nav a.active { color: #1d62bd; font-weight: 700; }
+      .user { display: flex; align-items: center; gap: 8px; color: #526078; font-size: 11px; } .avatar { width: 24px; height: 24px; display: grid; place-items: center; border-radius: 50%; color: #fff; background: #4e6683; font-size: 10px; }
+      main { padding: 34px 52px 46px; } .eyebrow { margin: 0 0 7px; color: #2470d8; font-size: 10px; font-weight: 800; letter-spacing: .11em; text-transform: uppercase; }
+      h1 { margin: 0; font-size: 27px; letter-spacing: -.03em; } .subtitle { margin: 8px 0 28px; color: #7b8798; font-size: 13px; }
+      .grid { display: grid; grid-template-columns: minmax(0, 1.05fr) minmax(330px, .95fr); gap: 22px; align-items: start; }
+      .card { border: 1px solid #dfe5ec; border-radius: 5px; background: #fff; box-shadow: 0 5px 16px #2d45600b; } .card-head { display: flex; align-items: center; justify-content: space-between; padding: 17px 20px; border-bottom: 1px solid #edf0f4; } .card-head h2 { margin: 0; font-size: 14px; } .card-body { padding: 20px; }
+      label { display: block; margin: 0 0 7px; color: #4e5c71; font-size: 11px; font-weight: 700; } input, textarea { width: 100%; border: 1px solid #d6dee8; border-radius: 4px; padding: 11px 12px; color: #26364c; background: #fbfcfe; outline: none; font: inherit; font-size: 12px; } input:focus, textarea:focus { border-color: #5d9ae8; box-shadow: 0 0 0 3px #2470d812; } textarea { min-height: 94px; resize: vertical; line-height: 1.5; } .field + .field { margin-top: 18px; }
+      .actions { display: flex; align-items: center; gap: 12px; margin-top: 21px; } button, .button { border: 1px solid #d15f2b; border-radius: 4px; padding: 10px 16px; color: #b84e20; background: #fff; cursor: pointer; font: inherit; font-size: 11px; font-weight: 800; } button:hover { color: #fff; background: #d15f2b; } button:disabled { cursor: wait; opacity: .65; } .helper { color: #8a95a5; font-size: 10px; }
+      .empty { padding: 32px 20px; color: #8b96a6; text-align: center; font-size: 12px; } .run-list { display: grid; gap: 12px; }
+      .run { padding: 17px 20px; } .run-top { display: flex; justify-content: space-between; gap: 16px; align-items: flex-start; } .run h3 { margin: 0; font-size: 12px; } .run-meta { margin: 6px 0 0; color: #8893a3; font-size: 10px; } .status { display: inline-flex; align-items: center; gap: 6px; padding: 5px 8px; border-radius: 12px; background: #eef3f8; color: #748196; font-size: 9px; font-weight: 800; text-transform: uppercase; letter-spacing: .06em; } .status.running { color: #1f6ecb; background: #eaf3ff; } .status.completed { color: #188154; background: #e8f7f0; } .status.failed { color: #b43c35; background: #fff0ee; } .dot { width: 6px; height: 6px; border-radius: 50%; background: currentColor; } .running .dot { animation: pulse 1.2s infinite; }
+      .progress { height: 5px; margin: 17px 0 13px; overflow: hidden; background: #edf1f5; border-radius: 99px; } .progress span { display: block; height: 100%; background: #2777dc; border-radius: inherit; transition: width .5s ease; }
+      .phase-row { display: flex; justify-content: space-between; gap: 10px; color: #5d6b7e; font-size: 10px; } .phase-row strong { color: #263b57; } .event-list { display: grid; gap: 8px; margin-top: 15px; padding-top: 13px; border-top: 1px solid #edf0f4; } .event { display: flex; gap: 8px; line-height: 1.35; font-size: 10px; } .event-time { width: 47px; color: #a0a9b5; flex: none; } .event-text { color: #6f7b8d; } .event-text strong { color: #2c3e57; } .finding { margin-top: 13px; padding: 10px; border-left: 3px solid #eb6b31; background: #fff8f3; color: #744027; font-size: 10px; line-height: 1.45; } .run-actions { margin-top: 14px; } .run-actions a { color: #2470d8; font-size: 10px; font-weight: 700; text-decoration: none; }
+      .metrics { display: flex; gap: 22px; margin-top: 15px; } .metric strong { display: block; color: #1d62bd; font-size: 18px; } .metric span { color: #8893a3; font-size: 9px; } .metric.bugs strong { color: #b43c35; }
+      .pipeline { display: flex; gap: 6px; margin-top: 12px; flex-wrap: wrap; } .pipeline-stage { padding: 3px 8px; border-radius: 10px; background: #eef3f8; color: #748196; font-size: 9px; font-weight: 700; text-transform: uppercase; } .pipeline-stage.active { background: #eaf3ff; color: #1f6ecb; } .pipeline-stage.done { background: #e8f7f0; color: #188154; }
+      footer { padding: 17px 52px; border-top: 1px solid #e8ecf1; color: #a2aab5; font-size: 10px; text-align: center; background: #fff; }
+      @keyframes pulse { 50% { opacity: .3; } } @media (max-width: 780px) { .grid { grid-template-columns: 1fr; } main { padding: 28px 20px; } header { padding: 0 17px; } nav { gap: 12px; margin-left: 14px; } nav a:nth-child(n+3) { display: none; } footer { padding: 17px 20px; } }
     </style>
   </head>
   <body>
-    <h1>Autonomous QA Mission Control</h1>
-    <p class="muted">Submit a local web app, run a bounded browser journey, and inspect evidence-backed findings.</p>
-    <section class="panel">
-      <form id="run-form">
-        <label for="app-url">Application URL</label>
-        <input id="app-url" value="http://127.0.0.1:4173" required>
-        <label for="description">What should the application do?</label>
-        <textarea id="description">The app should let a customer add a product, see an accurate total, and complete checkout.</textarea>
-        <button type="submit">Start QA run</button>
-        <span id="form-message" class="muted"></span>
-      </form>
-    </section>
-    <section id="runs"></section>
-    <script>
-      const form = document.querySelector("#run-form");
-      const message = document.querySelector("#form-message");
-      const runs = document.querySelector("#runs");
-      form.addEventListener("submit", async (event) => {
-        event.preventDefault();
-        message.textContent = "Starting...";
-        const response = await fetch("/api/runs", {
-          method: "POST",
-          headers: { "content-type": "application/json" },
-          body: JSON.stringify({ appUrl: document.querySelector("#app-url").value, description: document.querySelector("#description").value })
-        });
-        const data = await response.json();
-        message.textContent = response.ok ? "Run queued." : data.error;
-        refresh();
-      });
-      async function refresh() {
-        const response = await fetch("/api/runs");
-        const data = await response.json();
-        runs.innerHTML = data.length ? data.map(renderRun).join("") : '<section class="panel muted">No runs yet.</section>';
-      }
-      function renderRun(run) {
-        const summary = run.summary ? `<div class="metrics">
-          <div class="metric"><strong>${run.summary.passedJourneys}</strong> journey passed</div>
-          <div class="metric"><strong>${run.summary.confirmedBugs}</strong> confirmed bug(s)</div>
-          <div class="metric"><strong>${run.summary.tests}</strong> planned test(s)</div>
+    <div class="shell">
+      <header><div class="brand"><span class="brand-mark">T</span><span>TestPilot AI</span></div><nav><a class="active" href="#">Dashboard</a><a href="#runs">Projects</a><a href="#runs">Reports</a></nav><div class="user"><span class="avatar">AC</span><span>A. Chen</span></div></header>
+      <main>
+        <p class="eyebrow">Autonomous QA workspace</p><h1>Mission control</h1><p class="subtitle">Give the agent a URL and acceptance criteria. It discovers the app, generates test scenarios, executes them, and reports findings — all autonomously.</p>
+        <div class="grid">
+          <section class="card">
+            <div class="card-head"><h2>Start a new mission</h2><span class="status"><span class="dot"></span>local sandbox</span></div>
+            <div class="card-body"><form id="run-form">
+              <div class="field"><label for="app-url">Application URL</label><input id="app-url" value="http://127.0.0.1:4173" required></div>
+              <div class="field"><label for="description">Acceptance criteria</label><textarea id="description">The registration flow should only create an account when the password and confirmation password match.</textarea></div>
+              <div class="actions"><button id="submit-button" type="submit">Start QA mission</button><span id="form-message" class="helper">Autonomous agent · discover → analyze → test → report</span></div>
+            </form></div>
+          </section>
+          <section class="card" id="runs"><div class="card-head"><h2>Live missions</h2><span id="run-count" class="helper">0 runs</span></div><div id="runs-list" class="run-list"><div class="empty">No missions yet. Start one to see the agent work.</div></div></section>
         </div>
-        <a class="button" href="/api/runs/${run.id}/report" target="_blank">Open evidence report</a>` : "";
-        return `<article class="run"><h2>Run <code>${run.id}</code></h2>
-          <p><strong>Target:</strong> ${run.appUrl}</p>
-          <p class="status ${run.status}">${run.status}</p>${run.error ? `<p class="failed">${run.error}</p>` : ""}${summary}</article>`;
+      </main>
+      <footer>TestPilot AI · autonomous discovery · evidence-backed findings · <a href="/privacy">Privacy</a> · <a href="/terms">Terms</a></footer>
+    </div>
+    <script>
+      const form = document.querySelector("#run-form"), button = document.querySelector("#submit-button"), message = document.querySelector("#form-message"), list = document.querySelector("#runs-list"), count = document.querySelector("#run-count");
+      form.addEventListener("submit", async (event) => { event.preventDefault(); button.disabled = true; message.textContent = "Connecting to the agent..."; const response = await fetch("/api/runs", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ appUrl: document.querySelector("#app-url").value, description: document.querySelector("#description").value }) }); const data = await response.json(); if (!response.ok) { message.textContent = data.error || "Could not start mission."; button.disabled = false; return; } message.textContent = "Mission started. The agent is discovering the app..."; button.disabled = false; refresh(); });
+      function escapeHtml(value) { return String(value).replace(/[&<>"']/g, (char) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#039;" })[char]); }
+      function time(value) { return value ? new Date(value).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit", second: "2-digit" }) : ""; }
+      const STAGES = ["discovering", "discovered", "planning", "planned", "testing", "tested", "evidence", "complete"];
+      function pipelineHtml(phase) {
+        const phaseLabels = { discovering: "Discover", discovered: "Discover", planning: "Analyze", planned: "Analyze", testing: "Execute", tested: "Execute", evidence: "Evidence", complete: "Done" };
+        const stageLabels = ["Discover", "Analyze", "Execute", "Evidence", "Done"];
+        const currentIdx = STAGES.indexOf(phase);
+        return stageLabels.map((label, i) => {
+          const stageIdx = [0, 2, 4, 6, 7][i];
+          const cls = currentIdx >= stageIdx + 1 ? "done" : currentIdx >= stageIdx ? "active" : "";
+          return `<span class="pipeline-stage ${cls}">${label}</span>`;
+        }).join("");
       }
-      refresh();
-      setInterval(refresh, 1500);
+      function renderEvents(events = []) { return events.slice(-6).reverse().map((event) => `<div class="event"><span class="event-time">${time(event.at)}</span><span class="event-text"><strong>${escapeHtml(event.label || event.action || event.type)}</strong>${event.detail ? `: ${escapeHtml(event.detail)}` : event.result ? `: ${escapeHtml(event.result)}` : ""}</span></div>`).join(""); }
+      function renderRun(run) {
+        const progress = run.progress || 0;
+        const findings = (run.events || []).filter((event) => event.type === "finding");
+        const findingsHtml = findings.map(f => `<div class="finding"><strong>Finding:</strong> ${escapeHtml(f.label)}<br>${escapeHtml(f.detail)}</div>`).join("");
+        const summary = run.summary ? `<div class="metrics"><div class="metric"><strong>${run.summary.totalScenarios}</strong><span>scenarios</span></div><div class="metric"><strong>${run.summary.passed}</strong><span>passed</span></div><div class="metric"><strong>${run.summary.failed}</strong><span>failed</span></div><div class="metric bugs"><strong>${run.summary.confirmedBugs}</strong><span>confirmed bugs</span></div></div>` : "";
+        return `<article class="card run"><div class="run-top"><div><h3>Mission ${escapeHtml(run.id.slice(0, 13))}</h3><p class="run-meta">${escapeHtml(run.appUrl)} · started ${time(run.createdAt)}</p></div><span class="status ${run.status}"><span class="dot"></span>${escapeHtml(run.status)}</span></div><div class="progress"><span style="width:${progress}%"></span></div><div class="phase-row"><span><strong>${escapeHtml((run.events || []).at(-1)?.label || "Queued")}</strong></span><span>${progress}%</span></div>${run.status === "running" ? `<div class="pipeline">${pipelineHtml(run.phase)}</div>` : ""}<div class="event-list">${renderEvents(run.events)}</div>${findingsHtml}${summary}${run.status === "completed" ? `<div class="run-actions"><a href="/api/runs/${run.id}/report" target="_blank">Open evidence report →</a></div>` : ""}${run.error ? `<div class="finding">${escapeHtml(run.error)}</div>` : ""}</article>`;
+      }
+      async function refresh() { const response = await fetch("/api/runs"); const data = await response.json(); count.textContent = `${data.length} ${data.length === 1 ? "run" : "runs"}`; list.innerHTML = data.length ? data.map(renderRun).join("") : '<div class="empty">No missions yet. Start one to see the agent work.</div>'; }
+      refresh(); setInterval(refresh, 900);
     </script>
   </body>
 </html>
