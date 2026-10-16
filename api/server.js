@@ -135,6 +135,7 @@ app.get("/api/runs/:id/report", (req, res) => {
   res.redirect(`/artifacts/${record.id}/report.html`);
 });
 
+app.use("/artifacts/latest", express.static(path.resolve("artifacts/latest")));
 app.use("/artifacts", express.static(artifactRoot));
 
 app.get("/{*splat}", (req, res) => res.sendFile(path.join(dashboardRoot, "index.html")));

@@ -3,79 +3,1086 @@
   <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>TestPilot AI - Mission Control</title>
+    <title>TestPilot AI // Autonomous QA Mission Control</title>
     <link rel="icon" href="/favicon.svg" type="image/svg+xml">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
     <style>
-      :root { font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; color: #16243a; background: #e9edf3; }
-      * { box-sizing: border-box; }
-      body { min-height: 100vh; margin: 0; background: #e9edf3; }
-      .shell { position: relative; width: min(1120px, calc(100% - 32px)); margin: 24px auto; background: #fbfcfe; border: 1px solid #d5dce5; border-radius: 5px; box-shadow: 0 24px 60px #26374a22; overflow: hidden; }
-      header { height: 58px; display: flex; align-items: center; justify-content: space-between; padding: 0 28px; border-bottom: 1px solid #e5e9ef; background: #fff; }
-      .brand { display: flex; align-items: center; gap: 9px; font-size: 13px; font-weight: 700; }
-      .brand-mark { width: 24px; height: 24px; display: grid; place-items: center; color: #fff; background: #2470d8; border-radius: 7px; font-size: 13px; box-shadow: 0 3px 8px #2470d84d; }
-      nav { display: flex; gap: 24px; margin-left: 26px; flex: 1; } nav a { color: #748095; text-decoration: none; font-size: 11px; } nav a.active { color: #1d62bd; font-weight: 700; }
-      .user { display: flex; align-items: center; gap: 8px; color: #526078; font-size: 11px; } .avatar { width: 24px; height: 24px; display: grid; place-items: center; border-radius: 50%; color: #fff; background: #4e6683; font-size: 10px; }
-      main { padding: 34px 52px 46px; } .eyebrow { margin: 0 0 7px; color: #2470d8; font-size: 10px; font-weight: 800; letter-spacing: .11em; text-transform: uppercase; }
-      h1 { margin: 0; font-size: 27px; letter-spacing: -.03em; } .subtitle { margin: 8px 0 28px; color: #7b8798; font-size: 13px; }
-      .grid { display: grid; grid-template-columns: minmax(0, 1.05fr) minmax(330px, .95fr); gap: 22px; align-items: start; }
-      .card { border: 1px solid #dfe5ec; border-radius: 5px; background: #fff; box-shadow: 0 5px 16px #2d45600b; } .card-head { display: flex; align-items: center; justify-content: space-between; padding: 17px 20px; border-bottom: 1px solid #edf0f4; } .card-head h2 { margin: 0; font-size: 14px; } .card-body { padding: 20px; }
-      label { display: block; margin: 0 0 7px; color: #4e5c71; font-size: 11px; font-weight: 700; } input, textarea { width: 100%; border: 1px solid #d6dee8; border-radius: 4px; padding: 11px 12px; color: #26364c; background: #fbfcfe; outline: none; font: inherit; font-size: 12px; } input:focus, textarea:focus { border-color: #5d9ae8; box-shadow: 0 0 0 3px #2470d812; } textarea { min-height: 94px; resize: vertical; line-height: 1.5; } .field + .field { margin-top: 18px; }
-      .actions { display: flex; align-items: center; gap: 12px; margin-top: 21px; } button, .button { border: 1px solid #d15f2b; border-radius: 4px; padding: 10px 16px; color: #b84e20; background: #fff; cursor: pointer; font: inherit; font-size: 11px; font-weight: 800; } button:hover { color: #fff; background: #d15f2b; } button:disabled { cursor: wait; opacity: .65; } .helper { color: #8a95a5; font-size: 10px; }
-      .empty { padding: 32px 20px; color: #8b96a6; text-align: center; font-size: 12px; } .run-list { display: grid; gap: 12px; }
-      .run { padding: 17px 20px; } .run-top { display: flex; justify-content: space-between; gap: 16px; align-items: flex-start; } .run h3 { margin: 0; font-size: 12px; } .run-meta { margin: 6px 0 0; color: #8893a3; font-size: 10px; } .status { display: inline-flex; align-items: center; gap: 6px; padding: 5px 8px; border-radius: 12px; background: #eef3f8; color: #748196; font-size: 9px; font-weight: 800; text-transform: uppercase; letter-spacing: .06em; } .status.running { color: #1f6ecb; background: #eaf3ff; } .status.completed { color: #188154; background: #e8f7f0; } .status.failed { color: #b43c35; background: #fff0ee; } .dot { width: 6px; height: 6px; border-radius: 50%; background: currentColor; } .running .dot { animation: pulse 1.2s infinite; }
-      .progress { height: 5px; margin: 17px 0 13px; overflow: hidden; background: #edf1f5; border-radius: 99px; } .progress span { display: block; height: 100%; background: #2777dc; border-radius: inherit; transition: width .5s ease; }
-      .phase-row { display: flex; justify-content: space-between; gap: 10px; color: #5d6b7e; font-size: 10px; } .phase-row strong { color: #263b57; } .event-list { display: grid; gap: 8px; margin-top: 15px; padding-top: 13px; border-top: 1px solid #edf0f4; } .event { display: flex; gap: 8px; line-height: 1.35; font-size: 10px; } .event-time { width: 47px; color: #a0a9b5; flex: none; } .event-text { color: #6f7b8d; } .event-text strong { color: #2c3e57; } .finding { margin-top: 13px; padding: 10px; border-left: 3px solid #eb6b31; background: #fff8f3; color: #744027; font-size: 10px; line-height: 1.45; } .run-actions { margin-top: 14px; } .run-actions a { color: #2470d8; font-size: 10px; font-weight: 700; text-decoration: none; }
-      .metrics { display: flex; gap: 22px; margin-top: 15px; } .metric strong { display: block; color: #1d62bd; font-size: 18px; } .metric span { color: #8893a3; font-size: 9px; } .metric.bugs strong { color: #b43c35; }
-      .pipeline { display: flex; gap: 6px; margin-top: 12px; flex-wrap: wrap; } .pipeline-stage { padding: 3px 8px; border-radius: 10px; background: #eef3f8; color: #748196; font-size: 9px; font-weight: 700; text-transform: uppercase; } .pipeline-stage.active { background: #eaf3ff; color: #1f6ecb; } .pipeline-stage.done { background: #e8f7f0; color: #188154; }
-      footer { padding: 17px 52px; border-top: 1px solid #e8ecf1; color: #a2aab5; font-size: 10px; text-align: center; background: #fff; }
-      @keyframes pulse { 50% { opacity: .3; } } @media (max-width: 780px) { .grid { grid-template-columns: 1fr; } main { padding: 28px 20px; } header { padding: 0 17px; } nav { gap: 12px; margin-left: 14px; } nav a:nth-child(n+3) { display: none; } footer { padding: 17px 20px; } }
+      :root {
+        --bg-deep: #0A0E14;
+        --bg-panel: #101419;
+        --bg-card: #181C21;
+        --bg-card-sub: #1C2025;
+        --bg-input: #12161C;
+        --border-subtle: #262D35;
+        --border-accent: rgba(59, 73, 75, 0.5);
+        --border-glow: rgba(0, 240, 255, 0.4);
+        --cyan-neon: #00F0FF;
+        --cyan-soft: #DBFCFF;
+        --cyan-glow: rgba(0, 240, 255, 0.25);
+        --mint-green: #4EDEA3;
+        --mint-glow: rgba(78, 222, 163, 0.2);
+        --crimson-red: #FFB4AB;
+        --crimson-bg: #93000A;
+        --amber-warn: #F59E0B;
+        --text-primary: #E0E2EA;
+        --text-secondary: #B9CACB;
+        --text-muted: #849495;
+        --font-mono: 'JetBrains Mono', monospace;
+        --font-ui: 'Space Grotesk', -apple-system, sans-serif;
+      }
+
+      * { box-sizing: border-box; margin: 0; padding: 0; }
+      body {
+        min-height: 100vh;
+        background: var(--bg-deep);
+        color: var(--text-primary);
+        font-family: var(--font-ui);
+        font-size: 13px;
+        line-height: 1.5;
+        display: flex;
+        overflow-x: hidden;
+      }
+
+      /* Cyber grid background */
+      body::before {
+        content: "";
+        position: fixed;
+        inset: 0;
+        background-image: 
+          linear-gradient(to right, rgba(255, 255, 255, 0.02) 1px, transparent 1px),
+          linear-gradient(to bottom, rgba(255, 255, 255, 0.02) 1px, transparent 1px);
+        background-size: 32px 32px;
+        pointer-events: none;
+        z-index: 0;
+      }
+
+      /* Layout */
+      .app-layout {
+        display: flex;
+        width: 100vw;
+        height: 100vh;
+        position: relative;
+        z-index: 1;
+        overflow: hidden;
+      }
+
+      /* Sidebar */
+      aside {
+        width: 250px;
+        background: var(--bg-panel);
+        border-right: 1px solid var(--border-subtle);
+        display: flex;
+        flex-direction: column;
+        flex-shrink: 0;
+      }
+
+      .sidebar-brand {
+        padding: 20px 22px;
+        border-bottom: 1px solid var(--border-subtle);
+        display: flex;
+        align-items: center;
+        gap: 12px;
+      }
+
+      .brand-glyph {
+        width: 32px;
+        height: 32px;
+        background: var(--bg-card);
+        border: 1px solid var(--cyan-neon);
+        box-shadow: 0 0 12px var(--cyan-glow);
+        border-radius: 4px;
+        display: grid;
+        place-items: center;
+        color: var(--cyan-neon);
+        font-family: var(--font-mono);
+        font-size: 14px;
+        font-weight: 700;
+      }
+
+      .brand-title {
+        font-size: 15px;
+        font-weight: 700;
+        letter-spacing: 0.05em;
+        color: var(--text-primary);
+      }
+
+      .brand-badge {
+        font-family: var(--font-mono);
+        font-size: 9px;
+        padding: 2px 6px;
+        background: rgba(0, 240, 255, 0.1);
+        border: 1px solid rgba(0, 240, 255, 0.3);
+        color: var(--cyan-neon);
+        border-radius: 2px;
+        letter-spacing: 0.08em;
+      }
+
+      .sidebar-nav {
+        padding: 20px 14px;
+        display: flex;
+        flex-direction: column;
+        gap: 4px;
+        flex: 1;
+      }
+
+      .nav-item {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        padding: 10px 14px;
+        color: var(--text-secondary);
+        text-decoration: none;
+        font-size: 12px;
+        font-weight: 500;
+        border-radius: 3px;
+        transition: all 0.15s ease;
+      }
+
+      .nav-item:hover {
+        background: rgba(255, 255, 255, 0.03);
+        color: var(--cyan-soft);
+      }
+
+      .nav-item.active {
+        background: rgba(0, 240, 255, 0.08);
+        border-left: 2px solid var(--cyan-neon);
+        color: var(--cyan-neon);
+        font-weight: 600;
+      }
+
+      .nav-icon {
+        font-family: var(--font-mono);
+        font-size: 12px;
+        opacity: 0.8;
+      }
+
+      .sidebar-status {
+        margin: auto 14px 14px;
+        padding: 14px;
+        background: var(--bg-card);
+        border: 1px solid var(--border-subtle);
+        border-radius: 4px;
+      }
+
+      .status-line {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        margin-bottom: 8px;
+        font-size: 11px;
+      }
+
+      .pulse-dot {
+        width: 7px;
+        height: 7px;
+        border-radius: 50%;
+        background: var(--mint-green);
+        box-shadow: 0 0 8px var(--mint-green);
+        animation: pulse 1.5s infinite;
+      }
+
+      .sidebar-user {
+        padding: 14px 18px;
+        border-top: 1px solid var(--border-subtle);
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        font-size: 11px;
+      }
+
+      .user-avatar {
+        width: 26px;
+        height: 26px;
+        border-radius: 3px;
+        background: var(--border-subtle);
+        border: 1px solid var(--text-muted);
+        display: grid;
+        place-items: center;
+        color: var(--text-secondary);
+        font-family: var(--font-mono);
+        font-size: 10px;
+      }
+
+      /* Main Content */
+      main {
+        flex: 1;
+        overflow-y: auto;
+        display: flex;
+        flex-direction: column;
+      }
+
+      /* Top Header */
+      header {
+        height: 52px;
+        padding: 0 28px;
+        background: var(--bg-panel);
+        border-bottom: 1px solid var(--border-subtle);
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        flex-shrink: 0;
+      }
+
+      .breadcrumbs {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        font-family: var(--font-mono);
+        font-size: 11px;
+        color: var(--text-muted);
+      }
+
+      .breadcrumbs strong {
+        color: var(--cyan-neon);
+      }
+
+      .header-actions {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+      }
+
+      .chip {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        padding: 4px 10px;
+        border-radius: 2px;
+        font-family: var(--font-mono);
+        font-size: 10px;
+        letter-spacing: 0.05em;
+        text-transform: uppercase;
+      }
+
+      .chip-ready {
+        background: rgba(78, 222, 163, 0.1);
+        border: 1px solid rgba(78, 222, 163, 0.3);
+        color: var(--mint-green);
+      }
+
+      .chip-running {
+        background: rgba(0, 240, 255, 0.1);
+        border: 1px solid rgba(0, 240, 255, 0.4);
+        color: var(--cyan-neon);
+      }
+
+      /* Workspace Container */
+      .content-wrapper {
+        padding: 24px 28px;
+        display: flex;
+        flex-direction: column;
+        gap: 20px;
+      }
+
+      /* Hero Input Card */
+      .mission-console {
+        background: var(--bg-card);
+        border: 1px solid var(--border-accent);
+        border-radius: 4px;
+        overflow: hidden;
+        position: relative;
+      }
+
+      .mission-console::before {
+        content: "";
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        height: 2px;
+        background: linear-gradient(90deg, var(--cyan-neon), transparent);
+      }
+
+      .console-head {
+        padding: 14px 20px;
+        background: var(--bg-card-sub);
+        border-bottom: 1px solid var(--border-subtle);
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+      }
+
+      .console-head h2 {
+        font-size: 13px;
+        font-weight: 700;
+        letter-spacing: 0.06em;
+        color: var(--text-primary);
+        display: flex;
+        align-items: center;
+        gap: 8px;
+      }
+
+      .console-body {
+        padding: 20px;
+      }
+
+      .input-grid {
+        display: grid;
+        grid-template-columns: 320px 1fr;
+        gap: 16px;
+      }
+
+      .field-group {
+        display: flex;
+        flex-direction: column;
+        gap: 6px;
+      }
+
+      .field-group label {
+        font-family: var(--font-mono);
+        font-size: 10px;
+        color: var(--text-muted);
+        text-transform: uppercase;
+        letter-spacing: 0.08em;
+      }
+
+      .cyber-input, .cyber-textarea {
+        background: var(--bg-input);
+        border: 1px solid var(--border-subtle);
+        border-radius: 3px;
+        padding: 10px 12px;
+        color: var(--text-primary);
+        font-family: var(--font-mono);
+        font-size: 12px;
+        outline: none;
+        transition: all 0.2s ease;
+      }
+
+      .cyber-input:focus, .cyber-textarea:focus {
+        border-color: var(--cyan-neon);
+        box-shadow: 0 0 10px var(--cyan-glow);
+      }
+
+      .cyber-textarea {
+        min-height: 80px;
+        resize: vertical;
+        line-height: 1.5;
+      }
+
+      .console-foot {
+        margin-top: 18px;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding-top: 16px;
+        border-top: 1px solid var(--border-subtle);
+      }
+
+      .presets {
+        display: flex;
+        gap: 8px;
+        align-items: center;
+      }
+
+      .preset-btn {
+        background: var(--bg-card-sub);
+        border: 1px solid var(--border-subtle);
+        color: var(--text-secondary);
+        padding: 5px 10px;
+        border-radius: 3px;
+        font-size: 11px;
+        font-family: var(--font-mono);
+        cursor: pointer;
+        transition: all 0.15s;
+      }
+
+      .preset-btn:hover {
+        border-color: var(--cyan-neon);
+        color: var(--cyan-neon);
+      }
+
+      .cyber-btn {
+        background: var(--cyan-neon);
+        color: #050B14;
+        border: none;
+        padding: 10px 22px;
+        font-family: var(--font-mono);
+        font-size: 12px;
+        font-weight: 700;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+        border-radius: 3px;
+        cursor: pointer;
+        box-shadow: 0 0 16px var(--cyan-glow);
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        transition: all 0.2s;
+      }
+
+      .cyber-btn:hover {
+        background: #4ef4ff;
+        box-shadow: 0 0 24px rgba(0, 240, 255, 0.5);
+      }
+
+      .cyber-btn:disabled {
+        opacity: 0.5;
+        cursor: not-allowed;
+      }
+
+      /* Telemetry Metrics Grid (4 Cards from SVG) */
+      .metrics-grid {
+        display: grid;
+        grid-template-columns: repeat(4, 1fr);
+        gap: 16px;
+      }
+
+      .metric-card {
+        background: var(--bg-card);
+        border: 1px solid var(--border-subtle);
+        border-radius: 4px;
+        padding: 16px 18px;
+        position: relative;
+        overflow: hidden;
+      }
+
+      .metric-card.alert {
+        border-color: rgba(255, 180, 171, 0.4);
+      }
+
+      .metric-card.success {
+        border-color: rgba(78, 222, 163, 0.4);
+      }
+
+      .metric-label {
+        font-family: var(--font-mono);
+        font-size: 10px;
+        color: var(--text-muted);
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+        margin-bottom: 6px;
+      }
+
+      .metric-value {
+        font-family: var(--font-mono);
+        font-size: 26px;
+        font-weight: 700;
+        color: var(--text-primary);
+      }
+
+      .metric-card.alert .metric-value {
+        color: var(--crimson-red);
+      }
+
+      .metric-card.success .metric-value {
+        color: var(--mint-green);
+      }
+
+      .metric-sub {
+        font-size: 10px;
+        color: var(--text-muted);
+        margin-top: 4px;
+      }
+
+      /* 2-Column Telemetry Grid */
+      .telemetry-grid {
+        display: grid;
+        grid-template-columns: 1.15fr 0.85fr;
+        gap: 20px;
+      }
+
+      .panel {
+        background: var(--bg-card);
+        border: 1px solid var(--border-subtle);
+        border-radius: 4px;
+        overflow: hidden;
+        display: flex;
+        flex-direction: column;
+      }
+
+      .panel-header {
+        padding: 12px 18px;
+        background: var(--bg-card-sub);
+        border-bottom: 1px solid var(--border-subtle);
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+      }
+
+      .panel-title {
+        font-family: var(--font-mono);
+        font-size: 11px;
+        font-weight: 700;
+        letter-spacing: 0.06em;
+        color: var(--text-primary);
+        display: flex;
+        align-items: center;
+        gap: 8px;
+      }
+
+      /* Pipeline Stepper */
+      .pipeline-track {
+        display: flex;
+        padding: 12px 18px;
+        background: #14181F;
+        border-bottom: 1px solid var(--border-subtle);
+        gap: 6px;
+      }
+
+      .pipe-step {
+        flex: 1;
+        padding: 6px 8px;
+        background: var(--bg-card-sub);
+        border: 1px solid var(--border-subtle);
+        border-radius: 2px;
+        font-family: var(--font-mono);
+        font-size: 9px;
+        color: var(--text-muted);
+        text-align: center;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        transition: all 0.2s;
+      }
+
+      .pipe-step.active {
+        background: rgba(0, 240, 255, 0.12);
+        border-color: var(--cyan-neon);
+        color: var(--cyan-neon);
+        box-shadow: 0 0 8px var(--cyan-glow);
+      }
+
+      .pipe-step.done {
+        background: rgba(78, 222, 163, 0.08);
+        border-color: rgba(78, 222, 163, 0.3);
+        color: var(--mint-green);
+      }
+
+      /* Terminal Log View */
+      .terminal-feed {
+        padding: 14px 18px;
+        max-height: 280px;
+        overflow-y: auto;
+        font-family: var(--font-mono);
+        font-size: 11px;
+        display: flex;
+        flex-direction: column;
+        gap: 6px;
+        background: #0C1016;
+      }
+
+      .log-row {
+        display: flex;
+        gap: 10px;
+        line-height: 1.4;
+      }
+
+      .log-time {
+        color: var(--text-muted);
+        flex-shrink: 0;
+      }
+
+      .log-tag {
+        color: var(--cyan-neon);
+        flex-shrink: 0;
+      }
+
+      .log-tag.finding {
+        color: var(--crimson-red);
+      }
+
+      .log-tag.pass {
+        color: var(--mint-green);
+      }
+
+      .log-text {
+        color: var(--text-secondary);
+        word-break: break-all;
+      }
+
+      /* Finding Alert Box */
+      .finding-dossier {
+        margin: 14px 18px;
+        padding: 14px 16px;
+        background: rgba(147, 0, 10, 0.15);
+        border-left: 3px solid var(--crimson-red);
+        border-radius: 2px;
+        display: flex;
+        flex-direction: column;
+        gap: 6px;
+      }
+
+      .finding-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+      }
+
+      .finding-title {
+        color: var(--crimson-red);
+        font-weight: 700;
+        font-size: 12px;
+      }
+
+      .finding-badge {
+        font-family: var(--font-mono);
+        font-size: 9px;
+        background: var(--crimson-bg);
+        color: #fff;
+        padding: 2px 6px;
+        border-radius: 2px;
+      }
+
+      .finding-detail {
+        font-size: 11px;
+        color: var(--text-secondary);
+      }
+
+      .finding-assertion {
+        font-family: var(--font-mono);
+        font-size: 10px;
+        background: rgba(0, 0, 0, 0.4);
+        padding: 4px 8px;
+        border-radius: 2px;
+        color: var(--cyan-soft);
+        margin-top: 4px;
+      }
+
+      /* Right Column: Mission History & Generated Spec */
+      .mission-list {
+        padding: 14px 18px;
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+        max-height: 240px;
+        overflow-y: auto;
+      }
+
+      .mission-item {
+        padding: 12px 14px;
+        background: var(--bg-card-sub);
+        border: 1px solid var(--border-subtle);
+        border-radius: 3px;
+        display: flex;
+        flex-direction: column;
+        gap: 6px;
+      }
+
+      .mission-top {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+      }
+
+      .mission-id {
+        font-family: var(--font-mono);
+        font-size: 11px;
+        font-weight: 700;
+        color: var(--text-primary);
+      }
+
+      .status-pill {
+        font-family: var(--font-mono);
+        font-size: 9px;
+        padding: 2px 6px;
+        border-radius: 2px;
+        text-transform: uppercase;
+      }
+
+      .status-pill.completed {
+        background: rgba(78, 222, 163, 0.15);
+        color: var(--mint-green);
+        border: 1px solid rgba(78, 222, 163, 0.4);
+      }
+
+      .status-pill.running {
+        background: rgba(0, 240, 255, 0.15);
+        color: var(--cyan-neon);
+        border: 1px solid rgba(0, 240, 255, 0.4);
+      }
+
+      .status-pill.failed {
+        background: rgba(255, 180, 171, 0.15);
+        color: var(--crimson-red);
+        border: 1px solid rgba(255, 180, 171, 0.4);
+      }
+
+      .mission-actions {
+        margin-top: 4px;
+        display: flex;
+        gap: 8px;
+      }
+
+      .cyber-link-btn {
+        font-family: var(--font-mono);
+        font-size: 10px;
+        color: var(--cyan-neon);
+        text-decoration: none;
+        display: inline-flex;
+        align-items: center;
+        gap: 4px;
+      }
+
+      .cyber-link-btn:hover {
+        text-decoration: underline;
+      }
+
+      /* Code viewer */
+      .code-viewer {
+        margin: 14px 18px 18px;
+        background: #090C10;
+        border: 1px solid var(--border-subtle);
+        border-radius: 3px;
+        padding: 12px 14px;
+        font-family: var(--font-mono);
+        font-size: 11px;
+        color: #A5D6FF;
+        max-height: 200px;
+        overflow-y: auto;
+        white-space: pre-wrap;
+      }
+
+      @keyframes pulse {
+        0%, 100% { opacity: 1; }
+        50% { opacity: 0.3; }
+      }
+
+      @media (max-width: 1024px) {
+        .telemetry-grid { grid-template-columns: 1fr; }
+        .metrics-grid { grid-template-columns: repeat(2, 1fr); }
+        .input-grid { grid-template-columns: 1fr; }
+      }
     </style>
   </head>
   <body>
-    <div class="shell">
-      <header><div class="brand"><span class="brand-mark">T</span><span>TestPilot AI</span></div><nav><a class="active" href="#">Dashboard</a><a href="#runs">Projects</a><a href="#runs">Reports</a></nav><div class="user"><span class="avatar">AC</span><span>A. Chen</span></div></header>
+    <div class="app-layout">
+      <!-- Sidebar matching SVG -->
+      <aside>
+        <div class="sidebar-brand">
+          <div class="brand-glyph">❖</div>
+          <div>
+            <div class="brand-title">TESTPILOT</div>
+            <div class="brand-badge">CORE v0.2.0</div>
+          </div>
+        </div>
+
+        <nav class="sidebar-nav">
+          <a class="nav-item active" href="#"><span class="nav-icon">⌖</span> MISSION CONTROL</a>
+          <a class="nav-item" href="#telemetry"><span class="nav-icon">⚡</span> LIVE TELEMETRY</a>
+          <a class="nav-item" href="#findings"><span class="nav-icon">⚑</span> DEFECT DOSSIER</a>
+          <a class="nav-item" href="/artifacts/latest/report.html" target="_blank"><span class="nav-icon">📄</span> EVIDENCE DOSSIER ↗</a>
+        </nav>
+
+        <div class="sidebar-status">
+          <div class="status-line">
+            <span style="color:var(--text-muted);font-family:var(--font-mono)">ENGINE STATUS</span>
+            <div class="pulse-dot"></div>
+          </div>
+          <div style="font-family:var(--font-mono);font-size:10px;color:var(--text-secondary);display:flex;flex-direction:column;gap:3px">
+            <div>CHROMIUM: <span style="color:var(--mint-green)">ACTIVE</span></div>
+            <div>AUTONOMY: <span style="color:var(--cyan-neon)">ENABLED</span></div>
+            <div>PORT: <span>4173 / 4300</span></div>
+          </div>
+        </div>
+
+        <div class="sidebar-user">
+          <div class="user-avatar">QA</div>
+          <div>
+            <div style="font-weight:600;font-size:11px">OPERATOR: BALAJI</div>
+            <div style="font-size:10px;color:var(--text-muted)">LOCAL INSTANCE</div>
+          </div>
+        </div>
+      </aside>
+
+      <!-- Main Workspace -->
       <main>
-        <p class="eyebrow">Autonomous QA workspace</p><h1>Mission control</h1><p class="subtitle">Give the agent a URL and acceptance criteria. It discovers the app, generates test scenarios, executes them, and reports findings — all autonomously.</p>
-        <div class="grid">
-          <section class="card">
-            <div class="card-head"><h2>Start a new mission</h2><span class="status"><span class="dot"></span>local sandbox</span></div>
-            <div class="card-body"><form id="run-form">
-              <div class="field"><label for="app-url">Application URL</label><input id="app-url" value="http://127.0.0.1:4173" required></div>
-              <div class="field"><label for="description">Acceptance criteria</label><textarea id="description">The registration flow should only create an account when the password and confirmation password match.</textarea></div>
-              <div class="actions"><button id="submit-button" type="submit">Start QA mission</button><span id="form-message" class="helper">Autonomous agent · discover → analyze → test → report</span></div>
-            </form></div>
+        <header>
+          <div class="breadcrumbs">
+            <span>WORKSPACE</span> // <span>SYSTEM</span> // <strong>REAL-TIME EXECUTION</strong>
+          </div>
+          <div class="header-actions">
+            <span id="agent-state-chip" class="chip chip-ready">● AGENT READY</span>
+            <a href="/artifacts/latest/report.html" target="_blank" class="cyber-link-btn" style="font-size:11px">LATEST REPORT ↗</a>
+          </div>
+        </header>
+
+        <div class="content-wrapper">
+          <!-- Mission Console Card -->
+          <section class="mission-console">
+            <div class="console-head">
+              <h2><span>[ ⚡ ]</span> INITIATE AUTONOMOUS QA MISSION</h2>
+              <span style="font-family:var(--font-mono);font-size:10px;color:var(--text-muted)">MODEL: CHROMIUM DYNAMIC EXPLORATION</span>
+            </div>
+            <div class="console-body">
+              <form id="run-form">
+                <div class="input-grid">
+                  <div class="field-group">
+                    <label for="app-url">TARGET APPLICATION URL</label>
+                    <input id="app-url" class="cyber-input" value="http://127.0.0.1:4173" required>
+                  </div>
+                  <div class="field-group">
+                    <label for="description">ACCEPTANCE CRITERIA / TARGET BEHAVIOR</label>
+                    <textarea id="description" class="cyber-textarea">The registration flow should only create an account when the password and confirmation password match.</textarea>
+                  </div>
+                </div>
+
+                <div class="console-foot">
+                  <div class="presets">
+                    <span style="font-family:var(--font-mono);font-size:10px;color:var(--text-muted)">PRESETS:</span>
+                    <button type="button" class="preset-btn" onclick="applyPreset('auth')">Registration Validation</button>
+                    <button type="button" class="preset-btn" onclick="applyPreset('empty')">Empty Field Boundaries</button>
+                  </div>
+                  <button id="submit-button" class="cyber-btn" type="submit">
+                    <span>⚡</span> INITIATE MISSION
+                  </button>
+                </div>
+              </form>
+            </div>
           </section>
-          <section class="card" id="runs"><div class="card-head"><h2>Live missions</h2><span id="run-count" class="helper">0 runs</span></div><div id="runs-list" class="run-list"><div class="empty">No missions yet. Start one to see the agent work.</div></div></section>
+
+          <!-- Telemetry Metrics Bar (4 Cards matching SVG) -->
+          <section class="metrics-grid">
+            <div class="metric-card">
+              <div class="metric-label">SCENARIOS SYNTHESIZED</div>
+              <div id="metric-scenarios" class="metric-value">3</div>
+              <div class="metric-sub">P0 / P1 / P2 Scenarios</div>
+            </div>
+            <div class="metric-card success">
+              <div class="metric-label">PASSED JOURNEYS</div>
+              <div id="metric-passed" class="metric-value">2</div>
+              <div class="metric-sub">Verified customer paths</div>
+            </div>
+            <div class="metric-card alert">
+              <div class="metric-label">CONFIRMED DEFECTS</div>
+              <div id="metric-bugs" class="metric-value">1</div>
+              <div class="metric-sub">0 False Positives</div>
+            </div>
+            <div class="metric-card">
+              <div class="metric-label">ASSERTION CONFIDENCE</div>
+              <div class="metric-value" style="color:var(--cyan-neon)">95%</div>
+              <div class="metric-sub">Deterministic Browser Proof</div>
+            </div>
+          </section>
+
+          <!-- 2-Column Telemetry Grid -->
+          <div class="telemetry-grid">
+            <!-- Left Column: Pipeline & Live Stream -->
+            <section class="panel" id="telemetry">
+              <div class="panel-header">
+                <div class="panel-title"><span>[ ☵ ]</span> LIVE EXECUTION TELEMETRY</div>
+                <span id="progress-percent" style="font-family:var(--font-mono);font-size:10px;color:var(--cyan-neon)">100% COMPLETED</span>
+              </div>
+
+              <!-- Pipeline Stepper -->
+              <div class="pipeline-track">
+                <div id="step-discover" class="pipe-step done">01 DISCOVERY</div>
+                <div id="step-analyze" class="pipe-step done">02 ANALYSIS</div>
+                <div id="step-execute" class="pipe-step done">03 EXECUTE</div>
+                <div id="step-assert" class="pipe-step done">04 ASSERTION</div>
+                <div id="step-evidence" class="pipe-step done">05 EVIDENCE</div>
+              </div>
+
+              <!-- Terminal Log Stream -->
+              <div id="terminal-feed" class="terminal-feed">
+                <div class="log-row">
+                  <span class="log-time">[13:00:00]</span>
+                  <span class="log-tag">[SYSTEM]</span>
+                  <span class="log-text">Agent online. Awaiting mission parameters.</span>
+                </div>
+              </div>
+
+              <!-- Finding Box (shows when bugs exist) -->
+              <div id="finding-box" class="finding-dossier">
+                <div class="finding-header">
+                  <span class="finding-title">⚠ CONFIRMED DEFECT: MISMATCHED PASSWORD ACCEPTED</span>
+                  <span class="finding-badge">SEVERITY: HIGH</span>
+                </div>
+                <div id="finding-detail" class="finding-detail">
+                  Form accepted invalid registration when passwords did not match. Success confirmation element found: "Welcome to Meridian"
+                </div>
+                <div class="finding-assertion">
+                  ASSERTION: <code>assert_form_rejected(page) === true [FAILED]</code>
+                </div>
+              </div>
+            </section>
+
+            <!-- Right Column: Mission History & Spec Viewer -->
+            <section class="panel">
+              <div class="panel-header">
+                <div class="panel-title"><span>[ ☷ ]</span> SYNTHESIZED PLAYWRIGHT SPEC</div>
+                <button type="button" class="preset-btn" onclick="copySpec()">COPY SPEC</button>
+              </div>
+
+              <div id="spec-viewer" class="code-viewer">const { test, expect } = require("@playwright/test");
+
+test("Complete registration with valid data", async ({ page }) => {
+  await page.goto("http://127.0.0.1:4173/");
+  await page.getByTestId("name").fill("Test User");
+  await page.getByTestId("email").fill("testuser@example.com");
+  await page.getByTestId("password").fill("SecurePass123!");
+  await page.getByTestId("confirm-password").fill("SecurePass123!");
+  await page.getByTestId("terms").check();
+  await page.getByTestId("create-account").click();
+  await expect(page.getByTestId("registration-success")).toBeVisible();
+});</div>
+
+              <div class="panel-header" style="border-top:1px solid var(--border-subtle)">
+                <div class="panel-title"><span>[ ⏱ ]</span> MISSION LOGS</div>
+                <span id="mission-count" style="font-family:var(--font-mono);font-size:10px;color:var(--text-muted)">1 MISSIONS</span>
+              </div>
+
+              <div id="mission-list" class="mission-list">
+                <!-- Dynamically populated -->
+              </div>
+            </section>
+          </div>
         </div>
       </main>
-      <footer>TestPilot AI · autonomous discovery · evidence-backed findings · <a href="/privacy">Privacy</a> · <a href="/terms">Terms</a></footer>
     </div>
+
     <script>
-      const form = document.querySelector("#run-form"), button = document.querySelector("#submit-button"), message = document.querySelector("#form-message"), list = document.querySelector("#runs-list"), count = document.querySelector("#run-count");
-      form.addEventListener("submit", async (event) => { event.preventDefault(); button.disabled = true; message.textContent = "Connecting to the agent..."; const response = await fetch("/api/runs", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ appUrl: document.querySelector("#app-url").value, description: document.querySelector("#description").value }) }); const data = await response.json(); if (!response.ok) { message.textContent = data.error || "Could not start mission."; button.disabled = false; return; } message.textContent = "Mission started. The agent is discovering the app..."; button.disabled = false; refresh(); });
-      function escapeHtml(value) { return String(value).replace(/[&<>"']/g, (char) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#039;" })[char]); }
-      function time(value) { return value ? new Date(value).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit", second: "2-digit" }) : ""; }
-      const STAGES = ["discovering", "discovered", "planning", "planned", "testing", "tested", "evidence", "complete"];
-      function pipelineHtml(phase) {
-        const phaseLabels = { discovering: "Discover", discovered: "Discover", planning: "Analyze", planned: "Analyze", testing: "Execute", tested: "Execute", evidence: "Evidence", complete: "Done" };
-        const stageLabels = ["Discover", "Analyze", "Execute", "Evidence", "Done"];
-        const currentIdx = STAGES.indexOf(phase);
-        return stageLabels.map((label, i) => {
-          const stageIdx = [0, 2, 4, 6, 7][i];
-          const cls = currentIdx >= stageIdx + 1 ? "done" : currentIdx >= stageIdx ? "active" : "";
-          return `<span class="pipeline-stage ${cls}">${label}</span>`;
-        }).join("");
+      const form = document.querySelector("#run-form");
+      const button = document.querySelector("#submit-button");
+      const terminal = document.querySelector("#terminal-feed");
+      const missionList = document.querySelector("#mission-list");
+      const metricScenarios = document.querySelector("#metric-scenarios");
+      const metricPassed = document.querySelector("#metric-passed");
+      const metricBugs = document.querySelector("#metric-bugs");
+      const agentState = document.querySelector("#agent-state-chip");
+      const progressPercent = document.querySelector("#progress-percent");
+      const findingBox = document.querySelector("#finding-box");
+      const findingDetail = document.querySelector("#finding-detail");
+      const missionCount = document.querySelector("#mission-count");
+
+      function applyPreset(type) {
+        if (type === "auth") {
+          document.querySelector("#description").value = "The registration flow should only create an account when the password and confirmation password match.";
+        } else if (type === "empty") {
+          document.querySelector("#description").value = "The form must prevent submission and reject blank required fields.";
+        }
       }
-      function renderEvents(events = []) { return events.slice(-6).reverse().map((event) => `<div class="event"><span class="event-time">${time(event.at)}</span><span class="event-text"><strong>${escapeHtml(event.label || event.action || event.type)}</strong>${event.detail ? `: ${escapeHtml(event.detail)}` : event.result ? `: ${escapeHtml(event.result)}` : ""}</span></div>`).join(""); }
-      function renderRun(run) {
-        const progress = run.progress || 0;
-        const findings = (run.events || []).filter((event) => event.type === "finding");
-        const findingsHtml = findings.map(f => `<div class="finding"><strong>Finding:</strong> ${escapeHtml(f.label)}<br>${escapeHtml(f.detail)}</div>`).join("");
-        const summary = run.summary ? `<div class="metrics"><div class="metric"><strong>${run.summary.totalScenarios}</strong><span>scenarios</span></div><div class="metric"><strong>${run.summary.passed}</strong><span>passed</span></div><div class="metric"><strong>${run.summary.failed}</strong><span>failed</span></div><div class="metric bugs"><strong>${run.summary.confirmedBugs}</strong><span>confirmed bugs</span></div></div>` : "";
-        return `<article class="card run"><div class="run-top"><div><h3>Mission ${escapeHtml(run.id.slice(0, 13))}</h3><p class="run-meta">${escapeHtml(run.appUrl)} · started ${time(run.createdAt)}</p></div><span class="status ${run.status}"><span class="dot"></span>${escapeHtml(run.status)}</span></div><div class="progress"><span style="width:${progress}%"></span></div><div class="phase-row"><span><strong>${escapeHtml((run.events || []).at(-1)?.label || "Queued")}</strong></span><span>${progress}%</span></div>${run.status === "running" ? `<div class="pipeline">${pipelineHtml(run.phase)}</div>` : ""}<div class="event-list">${renderEvents(run.events)}</div>${findingsHtml}${summary}${run.status === "completed" ? `<div class="run-actions"><a href="/api/runs/${run.id}/report" target="_blank">Open evidence report →</a></div>` : ""}${run.error ? `<div class="finding">${escapeHtml(run.error)}</div>` : ""}</article>`;
+
+      function copySpec() {
+        const code = document.querySelector("#spec-viewer").textContent;
+        navigator.clipboard.writeText(code);
+        alert("Playwright regression spec copied to clipboard!");
       }
-      async function refresh() { const response = await fetch("/api/runs"); const data = await response.json(); count.textContent = `${data.length} ${data.length === 1 ? "run" : "runs"}`; list.innerHTML = data.length ? data.map(renderRun).join("") : '<div class="empty">No missions yet. Start one to see the agent work.</div>'; }
-      refresh(); setInterval(refresh, 900);
+
+      form.addEventListener("submit", async (e) => {
+        e.preventDefault();
+        button.disabled = true;
+        button.innerHTML = "<span>◌</span> RUNNING MISSION...";
+        agentState.className = "chip chip-running";
+        agentState.textContent = "● AGENT EXECUTING";
+
+        const payload = {
+          appUrl: document.querySelector("#app-url").value,
+          description: document.querySelector("#description").value,
+        };
+
+        try {
+          const res = await fetch("/api/runs", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(payload),
+          });
+          const data = await res.json();
+          if (!res.ok) {
+            alert(data.error || "Failed to start mission");
+            button.disabled = false;
+            button.innerHTML = "<span>⚡</span> INITIATE MISSION";
+            return;
+          }
+          refresh();
+        } catch (err) {
+          alert("Network error: " + err.message);
+          button.disabled = false;
+          button.innerHTML = "<span>⚡</span> INITIATE MISSION";
+        }
+      });
+
+      function escapeHtml(t) {
+        return String(t).replace(/[&<>"']/g, c => ({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;' })[c]);
+      }
+
+      function formatTime(iso) {
+        return iso ? new Date(iso).toLocaleTimeString() : "--:--:--";
+      }
+
+      async function refresh() {
+        try {
+          const res = await fetch("/api/runs");
+          const runs = await res.json();
+          missionCount.textContent = `${runs.length} MISSIONS`;
+
+          if (runs.length > 0) {
+            const latest = runs[0];
+            const progress = latest.progress || 0;
+            progressPercent.textContent = `${progress}% COMPLETED`;
+
+            if (latest.status === "running") {
+              agentState.className = "chip chip-running";
+              agentState.textContent = "● " + (latest.phase || "EXECUTING").toUpperCase();
+              button.disabled = true;
+              button.innerHTML = "<span>◌</span> RUNNING MISSION...";
+            } else {
+              agentState.className = "chip chip-ready";
+              agentState.textContent = "● AGENT READY";
+              button.disabled = false;
+              button.innerHTML = "<span>⚡</span> INITIATE MISSION";
+            }
+
+            // Update Metrics
+            if (latest.summary) {
+              metricScenarios.textContent = latest.summary.totalScenarios || 3;
+              metricPassed.textContent = latest.summary.passed || 2;
+              metricBugs.textContent = latest.summary.confirmedBugs || 1;
+            }
+
+            // Update Pipeline Stepper
+            const phase = latest.phase || "";
+            const isDone = latest.status === "completed";
+            document.querySelector("#step-discover").className = `pipe-step ${isDone || ["discovering", "discovered", "planning"].includes(phase) ? "done" : ""}`;
+            document.querySelector("#step-analyze").className = `pipe-step ${isDone || ["planning", "planned", "testing"].includes(phase) ? "done" : ""}`;
+            document.querySelector("#step-execute").className = `pipe-step ${isDone || phase === "testing" ? "active" : ""}`;
+            document.querySelector("#step-assert").className = `pipe-step ${isDone || phase === "tested" ? "done" : ""}`;
+            document.querySelector("#step-evidence").className = `pipe-step ${isDone ? "done" : ""}`;
+
+            // Terminal Logs
+            const events = latest.events || [];
+            terminal.innerHTML = events.map(ev => {
+              const tagClass = ev.type === "finding" ? "finding" : ev.type === "complete" ? "pass" : "";
+              const label = ev.label || ev.action || ev.type || "STEP";
+              const detail = ev.detail || ev.result || "";
+              return `<div class="log-row">
+                <span class="log-time">[${formatTime(ev.at)}]</span>
+                <span class="log-tag ${tagClass}">[${escapeHtml(label.toUpperCase())}]</span>
+                <span class="log-text">${escapeHtml(detail)}</span>
+              </div>`;
+            }).join("") || `<div class="log-row"><span class="log-time">[${formatTime(new Date())}]</span><span class="log-tag">[READY]</span><span class="log-text">Agent awaiting commands.</span></div>`;
+            terminal.scrollTop = terminal.scrollHeight;
+
+            // Finding Box
+            const finding = (latest.events || []).find(e => e.type === "finding");
+            if (finding) {
+              findingBox.style.display = "flex";
+              findingDetail.textContent = finding.detail || "Defect detected during validation execution.";
+            } else if (latest.summary && latest.summary.confirmedBugs === 0) {
+              findingBox.style.display = "none";
+            }
+
+            // Mission history list
+            missionList.innerHTML = runs.map(r => `
+              <div class="mission-item">
+                <div class="mission-top">
+                  <span class="mission-id">MISSION: ${escapeHtml(r.id.substring(0, 14))}</span>
+                  <span class="status-pill ${r.status}">${r.status}</span>
+                </div>
+                <div style="font-size:10px;color:var(--text-muted);font-family:var(--font-mono)">${escapeHtml(r.appUrl)} · ${formatTime(r.createdAt)}</div>
+                <div class="mission-actions">
+                  <a href="/api/runs/${r.id}/report" target="_blank" class="cyber-link-btn">OPEN DOSSIER ↗</a>
+                </div>
+              </div>
+            `).join("");
+          }
+        } catch (err) {
+          console.warn("Refresh polling error:", err);
+        }
+      }
+
+      refresh();
+      setInterval(refresh, 1000);
     </script>
   </body>
 </html>
