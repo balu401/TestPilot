@@ -24,7 +24,35 @@ let gemmaCallCount = 0;
 const gemmaThoughts = [];
 
 function getGemmaModel() {
-  return process.env.GEMMA_MODEL || "gemma-2-9b-it";
+  return process.env.GEMMA_MODEL || "gemma-4-26b-a4b-it";
+}
+
+function extractJson(text, type = "any") {
+  if (!text || typeof text !== "string") return null;
+  const clean = text.replace(/```json\n?|\n?```/g, "").trim();
+  try {
+    return JSON.parse(clean);
+  } catch {}
+
+  if (type === "array" || type === "any") {
+    const arrMatch = text.match(/\[\s*\{[\s\S]*\}\s*\]/);
+    if (arrMatch) {
+      try {
+        return JSON.parse(arrMatch[0]);
+      } catch {}
+    }
+  }
+
+  if (type === "object" || type === "any") {
+    const objMatch = text.match(/\{[\s\S]*\}/);
+    if (objMatch) {
+      try {
+        return JSON.parse(objMatch[0]);
+      } catch {}
+    }
+  }
+
+  return null;
 }
 
 function getApiKey() {
@@ -46,7 +74,7 @@ function getGemmaStats() {
 
 function recordThought(tag, text, meta = {}) {
   const thought = {
-    tag, // e.g. "GEMMA:PLAN", "GEMMA:VERIFY", "GEMMA:CLASSIFY", "GEMMA:DIAGNOSE"
+    tag, // e.g. "GEMMA:PLAN", "GEMMA:VERIFY", "GEMMA:CLASSIFY", "GEMMA:DIAGNOSE", "GEMMA:THINK"
     text,
     at: new Date().toISOString(),
     ...meta,
@@ -66,7 +94,7 @@ async function callGeminiApi(prompt, options = {}) {
 
   const primaryModel = options.model || getGemmaModel();
   const modelsToTry = [primaryModel];
-  if (primaryModel === "gemma-4-31b-it") {
+  if (primaryModel === "gemma-4-31b-it" && !modelsToTry.includes("gemma-4-26b-a4b-it")) {
     modelsToTry.push("gemma-4-26b-a4b-it");
   }
 
@@ -92,20 +120,20 @@ async function callGeminiApi(prompt, options = {}) {
       const body = {
         contents: [{ parts }],
         generationConfig: {
-          temperature: options.temperature ?? 0.2,
+          temperature: options.temperature ?? 0.1,
           maxOutputTokens: options.maxTokens ?? 2048,
         },
       };
 
-      if (options.jsonMode) {
-        body.generationConfig.responseMimeType = "application/json";
-      }
+      // Note: responseMimeType="application/json" causes 500 on Gemma 4 models
+      // because it conflicts with Gemma 4 Chain-of-Thought (thought: true) tokens.
+      // We rely on prompt instruction and extractJson() instead.
 
       const res = await fetch(url, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(body),
-        signal: AbortSignal.timeout(options.timeout || 8000),
+        signal: AbortSignal.timeout(options.timeout || 60000),
       });
 
       if (!res.ok) {
@@ -114,7 +142,19 @@ async function callGeminiApi(prompt, options = {}) {
       }
 
       const json = await res.json();
-      const textOutput = json.candidates?.[0]?.content?.parts?.[0]?.text;
+      const candidate = json.candidates?.[0]?.content;
+      const contentParts = candidate?.parts || [];
+
+      // If Gemma 4 emitted native CoT thinking, capture snippet into thought feed
+      const thoughtParts = contentParts.filter((p) => p.thought).map((p) => p.text).join(" ").trim();
+      if (thoughtParts && options.onThought) {
+        const snippet = thoughtParts.length > 200 ? thoughtParts.substring(0, 197) + "..." : thoughtParts;
+        await options.onThought(recordThought("GEMMA:THINK", snippet));
+      }
+
+      // The answer is in the non-thought part (or the final part)
+      const answerPart = contentParts.find((p) => !p.thought) || contentParts[contentParts.length - 1];
+      const textOutput = answerPart?.text;
       if (!textOutput) {
         throw new Error("Empty response from Gemma via Gemini API");
       }
@@ -191,6 +231,83 @@ async function askGemma(prompt, options = {}) {
 // Job 1: Gemma Test Planner
 // ---------------------------------------------------------------------------
 
+function buildFormSteps(form, appUrl, variant, expectedOutcome) {
+  const steps = [
+    { action: "navigate", value: appUrl, description: `Open ${appUrl}` },
+  ];
+  if (!form || !form.fields) return steps;
+
+  const passwordFields = form.fields.filter(
+    (f) => f.type === "password" || (f.name || f.testId || "").toLowerCase().includes("password")
+  );
+  const confirmField = passwordFields.length >= 2 ? passwordFields[1] : null;
+
+  for (const field of form.fields) {
+    const type = (field.type || "text").toLowerCase();
+    if (type === "hidden" || type === "submit") continue;
+
+    const selector = field.testId
+      ? { strategy: "testid", value: field.testId }
+      : field.id
+      ? { strategy: "id", value: `#${field.id}` }
+      : { strategy: "name", value: field.name };
+
+    if (type === "checkbox") {
+      if (variant !== "empty") {
+        steps.push({
+          action: "check",
+          selector,
+          description: `Check ${field.label || field.name || "Terms of Service"}`,
+        });
+      }
+      continue;
+    }
+
+    let val = "Test User";
+    if (type === "email") val = "testuser@example.com";
+    if (type === "password") {
+      if (field === confirmField && variant === "mismatched") {
+        val = "DifferentPass456!";
+      } else {
+        val = "SecurePass123!";
+      }
+    }
+    if (variant === "empty") val = "";
+
+    if (val !== "") {
+      steps.push({
+        action: "fill",
+        selector,
+        value: val,
+        description: `Fill ${field.label || field.name || "field"} with "${field === confirmField && variant === "mismatched" ? "a different password" : val}"`,
+      });
+    }
+  }
+
+  const submitField = form.submitButton || { strategy: "testid", value: "create-account" };
+  steps.push({
+    action: "click",
+    selector: submitField.strategy ? submitField : { strategy: "testid", value: "create-account" },
+    description: variant === "empty" ? "Click Create account without filling fields" : "Click Create account",
+  });
+
+  if (variant === "valid") {
+    steps.push({
+      action: "assert_form_accepted",
+      description: "Registration should succeed",
+      expected: expectedOutcome || "Registration succeeds with confirmation message",
+    });
+  } else {
+    steps.push({
+      action: "assert_form_rejected",
+      description: variant === "mismatched" ? "Form should reject mismatched passwords" : "Form should reject empty submission",
+      expected: expectedOutcome || "Registration is rejected with validation error",
+    });
+  }
+
+  return steps;
+}
+
 async function gemmaPlanScenarios(appUrl, description, forms, onThought) {
   const formSummary = forms.map((f, i) => ({
     formIndex: i + 1,
@@ -205,53 +322,57 @@ async function gemmaPlanScenarios(appUrl, description, forms, onThought) {
   }));
 
   const prompt = `You are a Principal QA Automation Engineer using Google Gemma.
-You are autonomously planning test coverage for a web application.
-
 Target URL: ${appUrl}
 Acceptance Criteria: "${description}"
 
 Discovered Application Forms:
 ${JSON.stringify(formSummary, null, 2)}
 
-Create a high-impact, deterministic test matrix with:
-1. P0: Defect-Hunting Negative Scenario (test boundary / mismatched / invalid inputs that might bypass validation)
+Plan 3 high-impact test scenarios:
+1. P0: Defect-Hunting Negative Scenario (test boundary / mismatched credentials that might bypass validation)
 2. P1: Happy-Path Positive Scenario (valid end-to-end customer journey)
-3. P2: Boundary Scenario (empty required submission / format check)
+3. P2: Boundary Scenario (empty required fields submission)
 
-Return ONLY a JSON array of objects with the following schema:
+Return ONLY a JSON array of objects:
 [
   {
-    "id": "scenario-unique-id",
+    "id": "TC-001",
     "title": "Clear descriptive title",
-    "type": "positive" | "negative" | "boundary",
+    "type": "negative" | "positive" | "boundary",
     "priority": "P0" | "P1" | "P2",
-    "reason": "One-sentence explaining why Gemma chose this scenario based on acceptance criteria",
-    "expectedOutcome": "What should happen if the application is correct",
-    "steps": [
-      {
-        "action": "navigate" | "fill" | "click" | "check" | "assert_form_accepted" | "assert_form_rejected",
-        "selector": { "strategy": "testid", "value": "element-testid" },
-        "value": "string value for fill or URL for navigate",
-        "description": "Readable action summary"
-      }
-    ]
+    "reason": "One clear sentence explaining why Gemma planned this based on acceptance criteria",
+    "expectedOutcome": "What should happen if the application behaves correctly"
   }
 ]`;
 
   try {
-    const rawJson = await askGemma(prompt, { jsonMode: true, temperature: 0.1 });
-    const cleanJson = rawJson.replace(/```json\n?|\n?```/g, "").trim();
-    const scenarios = JSON.parse(cleanJson);
+    const rawJson = await askGemma(prompt, { temperature: 0.1, onThought });
+    const scenarios = extractJson(rawJson, "array");
 
     if (Array.isArray(scenarios) && scenarios.length > 0) {
-      const summaryReason = `Gemma planned ${scenarios.length} scenarios: ${scenarios.map((s) => `${s.title} (${s.priority})`).join(", ")}.`;
+      const primaryForm = forms[0];
+      const hydrated = scenarios.map((s, idx) => {
+        const type = (s.type || (s.priority === "P0" ? "negative" : s.priority === "P1" ? "positive" : "boundary")).toLowerCase();
+        const variant = type === "negative" ? "mismatched" : type === "boundary" ? "empty" : "valid";
+        const steps = buildFormSteps(primaryForm, appUrl, variant, s.expectedOutcome);
+
+        return {
+          id: s.id || `gemma-${type}-${idx + 1}`,
+          title: s.title,
+          type,
+          priority: s.priority || (idx === 0 ? "P0" : idx === 1 ? "P1" : "P2"),
+          reason: s.reason,
+          expectedOutcome: s.expectedOutcome,
+          plannedBy: `Gemma 4 (${getGemmaModel()})`,
+          steps: s.steps && s.steps.length > 0 ? s.steps : steps,
+        };
+      });
+
+      const summaryReason = `Gemma planned ${hydrated.length} scenarios: ${hydrated.map((s) => `${s.title} (${s.priority})`).join(", ")}.`;
       const thought = recordThought("GEMMA:PLAN", summaryReason);
       if (onThought) await onThought(thought);
 
-      return scenarios.map((s) => ({
-        ...s,
-        plannedBy: `Gemma 4 (${getGemmaModel()})`,
-      }));
+      return hydrated;
     }
   } catch (err) {
     const thought = recordThought(
@@ -298,10 +419,12 @@ Return ONLY JSON:
       imageMime: "image/png",
       jsonMode: true,
       temperature: 0.1,
+      onThought,
     });
 
-    const parsed = JSON.parse(raw.replace(/```json\n?|\n?```/g, "").trim());
-    const thought = recordThought("GEMMA:VERIFY", `Visual verdict: ${parsed.whatISaw} (${parsed.verdict.toUpperCase()})`);
+    const parsed = extractJson(raw, "object");
+    if (!parsed) throw new Error("Could not parse visual verification JSON");
+    const thought = recordThought("GEMMA:VERIFY", `Visual verdict: ${parsed.whatISaw} (${(parsed.verdict || "fail").toUpperCase()})`);
     if (onThought) await onThought(thought);
 
     return parsed;
@@ -338,12 +461,13 @@ Return ONLY JSON:
 }`;
 
   try {
-    const raw = await askGemma(prompt, { jsonMode: true, temperature: 0.1 });
-    const parsed = JSON.parse(raw.replace(/```json\n?|\n?```/g, "").trim());
+    const raw = await askGemma(prompt, { jsonMode: true, temperature: 0.1, onThought });
+    const parsed = extractJson(raw, "object");
+    if (!parsed) throw new Error("Could not parse investigation JSON");
 
     const thought = recordThought(
       "GEMMA:CLASSIFY",
-      `Failure classified as ${parsed.classification.toUpperCase()} (${(parsed.confidence * 100).toFixed(0)}% confidence). ${parsed.why}`
+      `Failure classified as ${(parsed.classification || "CONFIRMED_BUG").toUpperCase()} (${Math.round((parsed.confidence || 0.95) * 100)}% confidence). ${parsed.why || ""}`
     );
     if (onThought) await onThought(thought);
 
@@ -386,8 +510,9 @@ Return ONLY JSON:
 }`;
 
   try {
-    const raw = await askGemma(prompt, { jsonMode: true, temperature: 0.1 });
-    const parsed = JSON.parse(raw.replace(/```json\n?|\n?```/g, "").trim());
+    const raw = await askGemma(prompt, { jsonMode: true, temperature: 0.1, onThought });
+    const parsed = extractJson(raw, "object");
+    if (!parsed) throw new Error("Could not parse diagnosis JSON");
 
     const thought = recordThought(
       "GEMMA:DIAGNOSE",
@@ -415,6 +540,7 @@ module.exports = {
   getApiKey,
   getGemmaStats,
   recordThought,
+  extractJson,
   askGemma,
   gemmaPlanScenarios,
   gemmaVisualVerify,

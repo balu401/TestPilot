@@ -1,7 +1,7 @@
 const { test, expect } = require("@playwright/test");
 
-test("Complete registration with valid data", async ({ page }) => {
-  await page.goto("http://127.0.0.1:4173/");
+test("Successful registration with matching passwords and all required fields", async ({ page }) => {
+  await page.goto("http://127.0.0.1:4173");
   await page.getByTestId("name").fill("Test User");
   await page.getByTestId("email").fill("testuser@example.com");
   await page.getByTestId("password").fill("SecurePass123!");
