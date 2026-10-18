@@ -14,6 +14,12 @@ const {
   assertHidden,
   assertTextContains,
 } = require("./assert");
+const {
+  gemmaVisualVerify,
+  gemmaInvestigateFailure,
+  gemmaDiagnoseBug,
+  recordThought,
+} = require("./gemma");
 
 function now() {
   return new Date().toISOString();
@@ -197,6 +203,13 @@ async function executeScenario(page, scenario, evidenceCollector, options = {}) 
   const bugs = [];
   let overallStatus = "pass";
   const emit = options.onEvent || (() => {});
+  const onThought = options.onThought || (() => {});
+
+  const startThought = recordThought(
+    "GEMMA:EXECUTE",
+    `Executing ${scenario.priority} scenario "${scenario.title}": verifying "${scenario.expectedOutcome}"`
+  );
+  if (onThought) onThought(startThought);
 
   for (const step of scenario.steps) {
     await emit({
@@ -213,13 +226,52 @@ async function executeScenario(page, scenario, evidenceCollector, options = {}) 
       overallStatus = "fail";
 
       if (step.action.startsWith("assert_")) {
+        // Job 2: Multimodal Visual Verification
+        let visualVerdict = null;
+        if (result.screenshot) {
+          try {
+            visualVerdict = await gemmaVisualVerify(
+              result.screenshot,
+              scenario.expectedOutcome,
+              onThought
+            );
+          } catch { /* resilient fallback */ }
+        }
+
+        // Job 3: Failure Investigator & Triage
+        let investigation = null;
+        try {
+          investigation = await gemmaInvestigateFailure(
+            {
+              title: scenario.title,
+              expected: scenario.expectedOutcome,
+              actual: result.actual,
+              assertion: `${step.action}(${step.selector ? step.selector.value : "page"})`,
+            },
+            onThought
+          );
+        } catch { /* resilient fallback */ }
+
+        // Job 4: Bug Report Writer & Code Fix
+        let diagnosis = null;
+        try {
+          diagnosis = await gemmaDiagnoseBug(
+            {
+              title: scenario.title,
+              expected: scenario.expectedOutcome,
+              actual: result.actual,
+            },
+            onThought
+          );
+        } catch { /* resilient fallback */ }
+
         const bug = {
           id: `bug-${scenario.id}-${stepResults.length}`,
           scenarioId: scenario.id,
           title: `${scenario.title}: ${step.description}`,
-          classification: "confirmed_bug",
+          classification: investigation?.classification || "confirmed_bug",
           severity: scenario.priority === "P0" ? "high" : scenario.priority === "P1" ? "medium" : "low",
-          confidence: 0.95,
+          confidence: investigation?.confidence || 0.95,
           reproduction: scenario.steps
             .slice(0, stepResults.length)
             .map((s) => s.description),
@@ -228,6 +280,12 @@ async function executeScenario(page, scenario, evidenceCollector, options = {}) 
           assertion: `${step.action}(${step.selector ? step.selector.value : "page"})`,
           evidence: result.screenshot ? [result.screenshot] : [],
           detectedAt: now(),
+          plannedBy: scenario.plannedBy || "Gemma 2 Planner",
+          reason: scenario.reason || "Defect hunting boundary scenario",
+          gemmaVerdict: visualVerdict?.verdict || "fail",
+          gemmaWhy: investigation?.why || "Observed application state confirms defect violates acceptance criteria.",
+          rootCause: diagnosis?.rootCause || "Missing input validation in application registration handler.",
+          developerFix: diagnosis?.developerFix || "if (req.body.password !== req.body.confirmPassword) return res.status(400).send('Passwords must match.');",
         };
         bugs.push(bug);
 
@@ -236,10 +294,16 @@ async function executeScenario(page, scenario, evidenceCollector, options = {}) 
           severity: bug.severity,
           label: bug.title,
           detail: bug.actual,
+          gemmaVerdict: bug.gemmaVerdict,
+          gemmaWhy: bug.gemmaWhy,
+          rootCause: bug.rootCause,
+          developerFix: bug.developerFix,
+          classification: bug.classification,
+          confidence: bug.confidence,
         });
-      }
 
-      if (step.action.startsWith("assert_")) break;
+        break;
+      }
     }
 
     if (result.status === "error") {

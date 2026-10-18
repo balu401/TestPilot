@@ -41,11 +41,13 @@ async function writeReport(artifactRoot) {
       <div style="display:flex;align-items:center;justify-content:space-between;padding:12px 18px;background:#1C2025;border-bottom:1px solid #262D35">
         <h3 style="margin:0;font-size:13px;font-weight:600;color:#E0E2EA">${i + 1}. ${escapeHtml(sr.scenario.title)}</h3>
         <div style="display:flex;align-items:center;gap:10px">
+          ${sr.scenario.plannedBy ? `<span style="font-size:9px;font-family:'JetBrains Mono',monospace;color:#00F0FF;background:rgba(0,240,255,0.1);border:1px solid rgba(0,240,255,0.3);padding:2px 6px;border-radius:2px">PLANNED BY: ${escapeHtml(sr.scenario.plannedBy)}</span>` : ""}
           <span style="font-size:10px;font-family:'JetBrains Mono',monospace;color:#849495">${sr.scenario.type.toUpperCase()} // ${sr.scenario.priority}</span>
           ${statusBadge(sr.status)}
         </div>
       </div>
       <div style="padding:14px 18px">
+        ${sr.scenario.reason ? `<p style="font-size:11px;color:#B9CACB;margin:0 0 8px;font-family:'JetBrains Mono',monospace"><span style="color:#00F0FF">REASON:</span> ${escapeHtml(sr.scenario.reason)}</p>` : ""}
         <p style="font-size:11px;color:#849495;margin-bottom:12px;font-family:'JetBrains Mono',monospace">EXPECTED: ${escapeHtml(sr.scenario.expectedOutcome)}</p>
         <table style="width:100%;border-collapse:collapse">
           <thead><tr style="border-bottom:1px solid #262D35;background:#12161C">
@@ -69,6 +71,22 @@ async function writeReport(artifactRoot) {
         <span style="font-family:'JetBrains Mono',monospace;font-size:9px;padding:3px 8px;border-radius:2px;background:#93000A;color:#fff;font-weight:700">SEVERITY: ${escapeHtml(bug.severity.toUpperCase())} // CONFIDENCE ${(bug.confidence * 100).toFixed(0)}%</span>
       </div>
       <div style="padding:16px 18px">
+        <!-- Gemma Cognitive Investigation & Fix -->
+        <div style="background:rgba(0,240,255,0.04);border:1px solid rgba(0,240,255,0.25);border-radius:4px;padding:14px 16px;margin-bottom:16px">
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">
+            <span style="font-size:11px;font-family:'JetBrains Mono',monospace;color:#00F0FF;font-weight:700">🧠 GEMMA AI TRIAGE & ROOT-CAUSE INVESTIGATION</span>
+            <span style="font-size:9px;font-family:'JetBrains Mono',monospace;color:#4EDEA3;background:rgba(78,222,163,0.15);border:1px solid rgba(78,222,163,0.3);padding:2px 6px;border-radius:2px">CLASSIFICATION: ${escapeHtml((bug.classification || "confirmed_bug").toUpperCase())}</span>
+          </div>
+          ${bug.gemmaWhy ? `<p style="font-size:12px;color:#B9CACB;margin:0 0 8px"><strong>Investigation Verdict:</strong> ${escapeHtml(bug.gemmaWhy)}</p>` : ""}
+          ${bug.rootCause ? `<p style="font-size:12px;color:#E0E2EA;margin:0 0 10px"><strong>Technical Root Cause:</strong> ${escapeHtml(bug.rootCause)}</p>` : ""}
+          ${bug.developerFix ? `
+            <div>
+              <span style="font-size:10px;font-family:'JetBrains Mono',monospace;color:#849495;text-transform:uppercase">Recommended Developer Code Fix:</span>
+              <pre style="background:#090C10;border:1px solid #262D35;padding:8px 12px;border-radius:3px;font-family:'JetBrains Mono',monospace;font-size:11px;color:#4EDEA3;margin:6px 0 0;overflow-x:auto"><code>${escapeHtml(bug.developerFix)}</code></pre>
+            </div>
+          ` : ""}
+        </div>
+
         <h4 style="margin:0 0 8px;font-size:11px;font-family:'JetBrains Mono',monospace;color:#00F0FF;text-transform:uppercase">Deterministic Reproduction Protocol:</h4>
         <ol style="margin:0 0 16px;padding-left:20px;font-size:12px;color:#B9CACB;line-height:1.6">${bug.reproduction.map((s) => `<li>${escapeHtml(s)}</li>`).join("")}</ol>
         

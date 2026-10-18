@@ -18,6 +18,7 @@ const { createPlan } = require("./plan");
 const { executeScenario } = require("./execute");
 const { createEvidenceCollector } = require("./evidence");
 const { generatePlaywrightTest, testFileName } = require("./codegen");
+const { getGemmaStats } = require("./gemma");
 
 function now() {
   return new Date().toISOString();
@@ -78,7 +79,16 @@ async function run(options = {}) {
       progress: 30,
     });
 
-    const scenarios = analyzeForTesting(siteMapData, description);
+    const onThought = async (thought) => {
+      await emit({
+        type: "gemmaThought",
+        tag: thought.tag,
+        text: thought.text,
+        at: thought.at || now(),
+      });
+    };
+
+    const scenarios = await analyzeForTesting(siteMapData, description, { onThought });
 
     if (scenarios.length === 0) {
       throw new Error("Analysis produced no test scenarios. Check the application structure and description.");
@@ -111,6 +121,7 @@ async function run(options = {}) {
 
       const result = await executeScenario(page, scenario, evidence, {
         demoPacing: options.demoPacing,
+        onThought,
         onEvent: async (event) => {
           await emit({ ...event, progress: progressBase + 5 });
         },
@@ -158,6 +169,7 @@ async function run(options = {}) {
       scenarioResults,
       summary,
       bugs: allBugs,
+      gemmaStats: getGemmaStats(),
     };
 
     await fs.writeFile(path.join(artifactRoot, "result.json"), JSON.stringify(result, null, 2));

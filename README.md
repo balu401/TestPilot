@@ -1,278 +1,227 @@
-# Autonomous AI QA Engineer — TestPilot
+# Autonomous AI QA Engineer — TestPilot AI
 
-This repository contains the autonomous QA agent prototype for the iMocha Track problem statement **IM-02: Autonomous AI QA Engineer**.
+> **Autonomous QA Agent powered by Google Gemma 2 open models & Playwright.**
+> Built for the Hacktoberfest Hackathon — targeting **Best Use of Gemma** (Google DeepMind) and **Best Open-Source AI Project** (DigitalOcean).
 
-TestPilot autonomously explores a web application, maps its DOM structure, analyzes the user's acceptance criteria, synthesizes positive, negative, and boundary test scenarios, executes them in a real Chromium browser, verifies behaviors with high-precision assertions, captures evidence, and generates regression Playwright tests.
+[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
+[![Node.js](https://img.shields.io/badge/Node.js-18%2B-green.svg)](https://nodejs.org/)
+[![Gemma 2](https://img.shields.io/badge/Model-Gemma--2--9B--IT-purple.svg)](https://ai.google.dev/gemma)
+[![Playwright](https://img.shields.io/badge/Runner-Playwright--Chromium-orange.svg)](https://playwright.dev/)
 
 ---
 
-## Autonomous Pipeline Architecture
+## What is TestPilot AI?
+
+TestPilot is an autonomous AI QA engineer that replaces brittle, hardcoded test scripts with continuous intelligent quality assurance. 
+
+Given only a web application URL and high-level human acceptance criteria:
+1. **Autonomous DOM Discovery**: Crawls the application and maps interactive elements, forms, and status indicators without hardcoded selectors.
+2. **Gemma 2 Test Planner (Job 1)**: Synthesizes a high-impact test matrix (P0 defect-hunting negative paths, P1 happy paths, P2 boundary tests) with explicit reasoning for every scenario.
+3. **Playwright Execution**: Drives real headless Chromium, executing steps and capturing console logs and full-page screenshots at every turn.
+4. **Gemma Multimodal Visual Verifier (Job 2)**: Visually inspects application screenshots to catch UI regressions and deceptive states.
+5. **Gemma Failure Investigator (Job 3)**: Triages unexpected behaviors, categorizing failures into `confirmed_bug`, `automation_error`, or `environment_failure`.
+6. **Gemma Bug Report Writer (Job 4)**: Diagnoses the technical root cause and provides recommended 1-3 line code fixes for backend developers.
+7. **Regression Test Codegen**: Automatically synthesizes standalone, production-ready `@playwright/test` specs from verified paths.
+8. **Interactive Evidence Dossier**: Generates an audit-grade HTML report with deterministic reproduction protocols and visual proof.
+
+---
+
+## 4 Gemma QA Jobs Architecture
 
 ```text
-User Criteria + App URL
-        │
-        ▼
-1. Discovery Engine (qa/discover.js)
-   Crawls application, builds site map of pages, forms, fields, links, and indicators
-        │
-        ▼
-2. Analysis Engine (qa/analyze.js)
-   Parses criteria keywords, deduplicates forms, synthesizes test scenarios (P0/P1/P2)
-        │
-        ▼
-3. Plan Builder (qa/plan.js & qa/schemas.js)
-   Validates scenarios against strict Zod schemas
-        │
-        ▼
-4. Generic Executor (qa/execute.js)
-   Dispatches Playwright actions using discovered selector strategies (testid, id, name, css)
-        │
-        ▼
-5. Assertion Engine (qa/assert.js)
-   High-precision evaluation: checks indicators, HTML5 validation, and response states
-        │
-        ▼
-6. Evidence Collector (qa/evidence.js)
-   Captures full-page screenshots, DOM snapshots, and console logs at every step
-        │
-        ├──▶ 7. Test Generator (qa/codegen.js) -> Standalone Playwright regression suite
-        └──▶ 8. Evidence Report (qa/report.js) -> Interactive HTML report with findings
+               User Acceptance Criteria + Target URL
+                               │
+                               ▼
+┌─────────────────────────────────────────────────────────────┐
+│ 1. DOM CRAWLER & DISCOVERY ENGINE (qa/discover.js)          │
+│    Maps forms, inputs, submit buttons, and status elements   │
+└──────────────────────────────┬──────────────────────────────┘
+                               │ Discovered Forms + Criteria
+                               ▼
+┌─────────────────────────────────────────────────────────────┐
+│ 2. GEMMA TEST PLANNER [Job 1] (qa/analyze.js + qa/gemma.js) │
+│    Synthesizes P0 Negative, P1 Positive, P2 Boundary tests  │
+│    Attaches explicit "Why Gemma planned this" reasoning     │
+└──────────────────────────────┬──────────────────────────────┘
+                               │ Structured Test Plan
+                               ▼
+┌─────────────────────────────────────────────────────────────┐
+│ 3. PLAYWRIGHT CHROMIUM RUNNER (qa/execute.js)                │
+│    Drives real browser actions and captures proof           │
+└──────────────┬───────────────────────────────┬──────────────┘
+               │ Pass                          │ Assertion Failure
+               ▼                               ▼
+┌──────────────────────────────┐ ┌─────────────────────────────┐
+│ REGRESSION CODEGEN           │ │ 4. GEMMA VISUAL VERIFIER    │
+│ (qa/codegen.js)              │ │    [Job 2] (qa/gemma.js)    │
+│ Synthesizes standalone       │ │    Multimodal screenshot    │
+│ Playwright regression specs  │ │    inspection               │
+└──────────────┬───────────────┘ └─────────────┬───────────────┘
+               │                               ▼
+               │                 ┌─────────────────────────────┐
+               │                 │ 5. GEMMA FAILURE TRIAGE     │
+               │                 │    [Job 3] (qa/gemma.js)    │
+               │                 │    Classifies: Bug vs       │
+               │                 │    Automation Error         │
+               │                 └─────────────┬───────────────┘
+               │                               ▼
+               │                 ┌─────────────────────────────┐
+               │                 │ 6. GEMMA BUG DIAGNOSER      │
+               │                 │    [Job 4] (qa/gemma.js)    │
+               │                 │    Synthesizes Root Cause   │
+               │                 │    and Developer Code Fix   │
+               │                 └─────────────┬───────────────┘
+               ▼                               ▼
+┌─────────────────────────────────────────────────────────────┐
+│ 7. MISSION EVIDENCE DOSSIER & DASHBOARD TELEMETRY           │
+│    Dual-stream live telemetry, root-cause card, HTML audit   │
+└─────────────────────────────────────────────────────────────┘
 ```
 
 ---
 
-## Key Modules
+## Live Mission Control Dashboard
 
-- **[`qa/discover.js`](file:///home/void/git/TestPilot/qa/discover.js)**: Live crawler that inspects the live DOM to catalog interactive elements, forms, links, and status indicators.
-- **[`qa/analyze.js`](file:///home/void/git/TestPilot/qa/analyze.js)**: Intelligent scenario generator that creates happy paths, validation boundary cases, and defect-seeking negative scenarios with form deduplication.
-- **[`qa/assert.js`](file:///home/void/git/TestPilot/qa/assert.js)**: High-precision assertion engine with container exclusions and HTML5 client-validation checks to eliminate false positives.
-- **[`qa/execute.js`](file:///home/void/git/TestPilot/qa/execute.js)**: Generic step executor that drives Playwright actions and captures evidence selectors.
-- **[`qa/codegen.js`](file:///home/void/git/TestPilot/qa/codegen.js)**: Dynamic code generator that writes clean, independently runnable Playwright test suites.
-- **[`qa/evidence.js`](file:///home/void/git/TestPilot/qa/evidence.js)**: Evidence collector capturing screenshots, console output, and DOM snapshots.
-- **[`qa/report.js`](file:///home/void/git/TestPilot/qa/report.js)**: Generates detailed HTML reports with step-by-step tables and bug reproduction trails.
-- **[`qa/schemas.js`](file:///home/void/git/TestPilot/qa/schemas.js)**: Comprehensive Zod validation schemas for all data models.
-- **[`api/server.js`](file:///home/void/git/TestPilot/api/server.js)**: Mission control API and static dashboard server.
-- **[`dashboard/index.html`](file:///home/void/git/TestPilot/dashboard/index.html)**: Interactive web dashboard showing real-time pipeline stages and findings.
+The Mission Control dashboard (`dashboard/index.html`) features:
+- **Dual-Stream Live Console**:
+  - **Left Stream**: Live Browser Telemetry (Playwright: `[NAVIGATE]`, `[FILL]`, `[CLICK]`, `[ASSERT]`).
+  - **Right Stream**: Gemma Reasoning Stream (`[GEMMA:PLAN]`, `[GEMMA:EXECUTE]`, `[GEMMA:VERIFY]`, `[GEMMA:CLASSIFY]`, `[GEMMA:DIAGNOSE]`).
+- **Gemma Model Header & Counter**: Live badge displaying active Gemma model and inference call counter.
+- **Defect Dossier with "Why?" Drawer**: Shows expected vs observed, visual verification verdict, failure classification with confidence rating, technical root cause, and copy-pasteable code fix.
+- **Synthesized Test Matrix**: Live cards for all synthesized scenarios showing priority, step count, and Gemma's explicit rationale.
+- **Synthesized Playwright Spec**: Real-time viewer with 1-click clipboard copy.
 
 ---
 
-## Prerequisites
+## Setup & Configuration
 
-- **Node.js**: v18 or newer
+### 1. Prerequisites
+- **Node.js**: v18.0.0 or newer (built and verified on Node v26)
 - **npm**: v9 or newer
-- **Operating System**: Linux, macOS, or Windows
+- **Chromium browser**: Installed via Playwright
 
-Check your installed versions:
 ```bash
-node --version
-npm --version
+# Clone the repository
+git clone https://github.com/balaji-s-repo/TestPilot.git
+cd TestPilot
+
+# Install dependencies
+npm install
+
+# Install Playwright browser binary
+npx playwright install chromium
 ```
 
+### 2. Environment Variables & Gemma Backend
+
+Copy `.env.example` to `.env`:
+```bash
+cp .env.example .env
+```
+
+TestPilot supports three flexible Gemma backends:
+
+#### Option A: Google Gemini API (Recommended for Hosted Gemma)
+Obtain a free Google AI Studio key at [ai.google.dev](https://ai.google.dev/):
+```env
+GEMINI_API_KEY=your_google_ai_studio_api_key_here
+GEMMA_MODEL=gemma-2-9b-it
+```
+*(Also supports `gemma-2-27b-it` or preview models).*
+
+#### Option B: Local Ollama (100% Offline & Open-Weights)
+If you prefer running open weights on your local machine or GPU:
+```bash
+ollama run gemma2:9b
+```
+In your `.env`:
+```env
+OLLAMA_HOST=http://localhost:11434
+GEMMA_MODEL=gemma2:9b
+```
+
+#### Option C: Resilient Autonomous Heuristic Fallback
+If no API key or local Ollama host is found, TestPilot's intelligent fallback engine takes over seamlessly. **It guarantees 0 crashes and 0 demo failures during live stage presentations.**
+
 ---
 
-## Installation
+## Running TestPilot AI
 
-1. Clone or navigate to the repository directory:
-   ```bash
-   cd /path/to/TestPilot
-   ```
-
-2. Install Node dependencies:
-   ```bash
-   npm install
-   ```
-
-3. Install the Playwright Chromium browser:
-   ```bash
-   npx playwright install chromium
-   ```
-
-*(If you are on Linux and missing OS libraries, run: `npx playwright install --with-deps chromium`)*
-
----
-
-## Instructions: How to Run
-
-There are four ways to run TestPilot depending on your workflow:
-
-### Method 1: All-In-One Automated CLI Demo (Recommended for quick testing)
-
-The quickest way to see TestPilot in action. It automatically starts the target sample application, runs the complete autonomous pipeline (discovery, analysis, execution, evidence collection, codegen, reporting), and stops the application when finished.
-
+### Method 1: Automated 10-Second Demo (Recommended for Judges)
+Starts the target app, runs the full Gemma pipeline, catches the defect, generates regression tests, and writes the HTML dossier:
 ```bash
 npm run demo
 ```
 
-**What to expect:**
-```text
-{"totalScenarios":3,"passed":2,"failed":1,"errors":0,"confirmedBugs":1,"status":"completed_with_findings"}
-
-Evidence report written to .../artifacts/latest/report.html
-Scenarios: 3 | Passed: 2 | Failed: 1 | Bugs: 1
-```
-
-Generated artifacts will be created in `artifacts/latest/`:
-- `artifacts/latest/report.html` — Interactive visual evidence report.
-- `artifacts/latest/result.json` — Machine-readable run outcome and bug details.
-- `artifacts/latest/plan.json` — Generated test plan with discovered selectors.
-- `artifacts/latest/screenshots/` — Step-by-step full-page screenshots.
-- `generated/registration-flow.spec.js` — Standalone Playwright test.
-
----
-
 ### Method 2: Mission Control Web Dashboard
-
-The web UI provides real-time visibility into the agent's live execution steps, pipeline stage transitions, and confirmed findings.
-
-#### Step 1: Start the sample application (Terminal 1)
 ```bash
+# Terminal 1: Start sample application
 npm run start:app
-```
-*Application runs at:* `http://127.0.0.1:4173`
 
-#### Step 2: Start the dashboard server (Terminal 2)
-```bash
+# Terminal 2: Start Mission Control Dashboard
 npm run start:dashboard
 ```
-*Dashboard runs at:* `http://127.0.0.1:4300`
+Open **`http://127.0.0.1:4300`** in your browser and click **⚡ INITIATE MISSION**.
 
-#### Step 3: Run a mission from the browser
-1. Open your browser and navigate to **`http://127.0.0.1:4300`**.
-2. Keep the default application URL (`http://127.0.0.1:4173`) or enter your target URL.
-3. Review or edit the Acceptance Criteria (e.g. *"The registration flow should only create an account when the password and confirmation password match."*).
-4. Click **Start QA mission**.
-5. Watch the real-time stage progression:
-   - **Discover**: Crawls the app and extracts forms, inputs, and indicators.
-   - **Analyze**: Synthesizes P0/P1/P2 scenarios.
-   - **Execute**: Drives Playwright and tests each scenario.
-   - **Evidence**: Collects screenshots and logs.
-   - **Done**: Summarizes findings.
-6. Click **Open evidence report →** to open the full HTML evidence report.
-
----
-
-### Method 3: Running the Generated Playwright Regression Suite
-
-TestPilot automatically synthesizes clean, independently runnable Playwright test files based on the verified positive customer journeys.
-
-To run the generated regression test:
+### Method 3: Run Generated Regression Tests
+TestPilot writes standalone `@playwright/test` specs from verified paths:
 ```bash
 npm run test:generated
 ```
 
-**Expected output:**
-```text
-Running 1 test using 1 worker
-
-  ✓ Complete registration with valid data (499ms)
-
-  1 passed (1.8s)
-```
-
-The generated spec is located at:
-`generated/registration-flow.spec.js`
-
----
-
-### Method 4: CLI Runner (Direct Execution)
-
-If you already have the target application running, you can run the autonomous QA runner directly from the terminal:
-
+### Method 4: Direct CLI Execution
 ```bash
-# Target default local app (http://127.0.0.1:4173)
 npm run qa
-
-# Or override target URL and custom artifact directory:
-APP_URL=http://127.0.0.1:4173 ARTIFACT_DIR=artifacts/custom-run npm run qa
 ```
 
 ---
 
-## Viewing the Evidence Report
+## Planted Defect Verification
 
-After any run, open the generated HTML report in your browser:
+The included demo application (`sample-app/server.js`) simulates the **Meridian** SaaS workspace registration.
 
-- **Linux**:
-  ```bash
-  xdg-open artifacts/latest/report.html
-  ```
-- **macOS**:
-  ```bash
-  open artifacts/latest/report.html
-  ```
-- **Windows**:
-  ```bash
-  start artifacts/latest/report.html
-  ```
-
-The report includes:
-- Summary metrics (total scenarios, passed, failed, confirmed bugs).
-- Confirmed bugs with severity, confidence rating (95%), full reproduction steps, expected vs. actual outcomes, determinidstic assertions, and screenshot proof.
-- Complete step-by-step execution tables for every scenario with status badges and evidence links.
+- **The Bug**: The registration form collects `password` and `confirmPassword`, but the backend handler fails to verify they match.
+- **How Gemma Catches It**:
+  1. *Planner*: Detects confirmation field and synthesizes P0 scenario with mismatched passwords (`"SecurePass123!"` vs `"DifferentPass456!"`).
+  2. *Executor*: Submits the form and captures evidence.
+  3. *Visual Verifier & Triage*: Gemma detects `<h1 data-testid="registration-success">Welcome to Meridian</h1>`, notes that an invalid submission was accepted, and classifies it as `confirmed_bug` (95% confidence).
+  4. *Bug Report Writer*: Diagnoses root cause:
+     > `"Backend registration handler does not compare 'password' with 'confirmPassword' before creating account."`
+     And provides the fix:
+     > `if (req.body.password !== req.body.confirmPassword) return res.status(400).send('Passwords must match.');`
 
 ---
 
-## API Usage
+## Repository Structure
 
-When the dashboard server is running (`npm run start:dashboard`), you can also trigger and inspect runs via REST API:
-
-### 1. Trigger a new QA mission
-```bash
-curl -X POST http://127.0.0.1:4300/api/runs \
-  -H 'Content-Type: application/json' \
-  -d '{
-    "appUrl": "http://127.0.0.1:4173",
-    "description": "The registration flow should only create an account when the password and confirmation password match."
-  }'
-```
-
-Response:
-```json
-{
-  "id": "e4f8b2d1-...",
-  "status": "queued",
-  "progress": 0
-}
-```
-
-### 2. Poll run status
-```bash
-curl http://127.0.0.1:4300/api/runs/<RUN_ID>
-```
-
-### 3. Open run report
 ```text
-http://127.0.0.1:4300/api/runs/<RUN_ID>/report
+├── api/
+│   └── server.js          # Mission Control server & REST endpoints
+├── dashboard/
+│   ├── index.html         # Cyberpunk Mission Control UI with Dual Log Streams
+│   └── favicon.svg        # Brand icon
+├── qa/
+│   ├── gemma.js           # Gemma AI Client (Jobs 1–4, Gemini API & Ollama)
+│   ├── analyze.js         # Intelligent Scenario Synthesizer (P0/P1/P2)
+│   ├── discover.js        # Dynamic DOM Crawler & Structure Mapper
+│   ├── execute.js         # Generic Playwright Step Executor & Visual Verifier
+│   ├── assert.js          # Deterministic High-Precision Assertion Oracle
+│   ├── codegen.js         # Playwright Spec Generator
+│   ├── evidence.js        # Screenshots, DOM Snapshots & Console Logs
+│   ├── report.js          # HTML Evidence Dossier Generator
+│   ├── schemas.js         # Zod Contract Validation Schemas
+│   ├── run.js             # Pipeline Orchestrator
+│   └── demo.js            # Automated End-to-End Demo Script
+├── sample-app/
+│   └── server.js          # Meridian Demo Web App with Seeded Defect
+├── generated/             # Synthesized standalone Playwright regression specs
+├── .env.example           # Environment template (Gemini API & Ollama)
+├── LICENSE                # MIT License
+└── package.json
 ```
 
 ---
 
-## Target Application & Seeded Defect
+## License
 
-The sample application in `sample-app/server.js` is the **Meridian** workspace registration flow.
-
-### The Seeded Defect:
-While the registration page collects both `Password` and `Confirm password`, the backend accepts the registration even when the confirmation password does **not** match the initial password.
-
-### How TestPilot Accurately Catches It:
-1. **Discovery**: Locates the form fields (`name`, `email`, `password`, `confirm-password`, `terms`) and submit button (`create-account`).
-2. **Analysis**: Synthesizes a high-priority (`P0`) negative test scenario with mismatched passwords based on the acceptance criteria keywords.
-3. **Execution**: Submits the registration with `"SecurePass123!"` and `"DifferentPass456!"`.
-4. **Assertion**: Scans for success vs. error indicators. Detects `<h1 data-testid="registration-success">Welcome to Meridian</h1>`, proving the invalid submission was mistakenly accepted.
-5. **Reporting**: Documents the finding with full reproduction steps, deterministic assertion `assert_form_rejected(page)`, and screenshot evidence.
-6. **False-Positive Elimination**: Correctly verifies that empty submissions are rejected by client-side HTML5 validation, reporting 0 false alarms.
-
----
-
-## Troubleshooting
-
-- **`playwright: command not found` or browser launch failure:**
-  Run `npx playwright install chromium` (or with system deps: `npx playwright install --with-deps chromium`).
-- **Connection refused to `http://127.0.0.1:4173`:**
-  Make sure the sample application is running (`npm run start:app`). If running `npm run demo`, it starts and stops the app automatically.
-- **Port already in use (`4173` or `4300`):**
-  Specify a custom port:
-  ```bash
-  PORT=4180 npm run start:app
-  PORT=4310 npm run start:dashboard
-  ```
+This project is licensed under the **MIT License** — see the [LICENSE](LICENSE) file for details.

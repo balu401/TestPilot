@@ -549,33 +549,95 @@
         color: var(--mint-green);
       }
 
-      /* Terminal Log View */
+      /* Dual Terminal Log View */
+      .dual-terminal-container {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        background: #080C10;
+        border-bottom: 1px solid var(--border-subtle);
+      }
+
+      .terminal-pane {
+        display: flex;
+        flex-direction: column;
+        border-right: 1px solid var(--border-subtle);
+        min-width: 0;
+      }
+
+      .terminal-pane:last-child {
+        border-right: none;
+      }
+
+      .terminal-pane-head {
+        padding: 7px 12px;
+        background: #0F1318;
+        border-bottom: 1px solid var(--border-subtle);
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        font-family: var(--font-mono);
+        font-size: 10px;
+        font-weight: 700;
+        color: var(--text-secondary);
+        letter-spacing: 0.05em;
+      }
+
+      .terminal-pane-head.gemma {
+        background: #12151E;
+        color: #C4B5FD;
+      }
+
+      .live-dot-tag {
+        font-size: 9px;
+        color: var(--mint-green);
+        display: inline-flex;
+        align-items: center;
+        gap: 4px;
+      }
+
+      .gemma-chip {
+        font-family: var(--font-mono);
+        font-size: 8px;
+        padding: 2px 6px;
+        border-radius: 2px;
+        background: rgba(167, 139, 250, 0.15);
+        color: #C4B5FD;
+        border: 1px solid rgba(167, 139, 250, 0.3);
+        letter-spacing: 0.06em;
+      }
+
       .terminal-feed {
-        padding: 14px 18px;
-        max-height: 280px;
+        padding: 12px 14px;
+        height: 280px;
         overflow-y: auto;
         font-family: var(--font-mono);
         font-size: 11px;
         display: flex;
         flex-direction: column;
         gap: 6px;
-        background: #0C1016;
+        background: #090C10;
+      }
+
+      .terminal-feed.gemma-feed {
+        background: #0B0E16;
       }
 
       .log-row {
         display: flex;
-        gap: 10px;
+        gap: 8px;
         line-height: 1.4;
       }
 
       .log-time {
         color: var(--text-muted);
         flex-shrink: 0;
+        font-size: 10px;
       }
 
       .log-tag {
         color: var(--cyan-neon);
         flex-shrink: 0;
+        font-weight: 700;
       }
 
       .log-tag.finding {
@@ -586,9 +648,92 @@
         color: var(--mint-green);
       }
 
+      .log-tag.gemma-plan {
+        color: #A78BFA;
+      }
+
+      .log-tag.gemma-exec {
+        color: var(--cyan-neon);
+      }
+
+      .log-tag.gemma-verify {
+        color: var(--mint-green);
+      }
+
+      .log-tag.gemma-classify {
+        color: var(--amber-warn);
+      }
+
+      .log-tag.gemma-diagnose {
+        color: var(--crimson-red);
+      }
+
       .log-text {
         color: var(--text-secondary);
-        word-break: break-all;
+        word-break: break-word;
+      }
+
+      /* Test Matrix Cards */
+      .scenario-card {
+        background: var(--bg-card-sub);
+        border: 1px solid var(--border-subtle);
+        border-radius: 4px;
+        padding: 12px 14px;
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+        transition: border-color 0.2s;
+      }
+
+      .scenario-card:hover {
+        border-color: rgba(0, 240, 255, 0.4);
+      }
+
+      .scenario-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+      }
+
+      .scenario-p-badge {
+        font-family: var(--font-mono);
+        font-size: 9px;
+        font-weight: 700;
+        padding: 2px 6px;
+        border-radius: 2px;
+      }
+
+      .scenario-p-badge.p0 {
+        background: rgba(255, 180, 171, 0.2);
+        color: var(--crimson-red);
+        border: 1px solid rgba(255, 180, 171, 0.4);
+      }
+
+      .scenario-p-badge.p1 {
+        background: rgba(0, 240, 255, 0.15);
+        color: var(--cyan-neon);
+        border: 1px solid rgba(0, 240, 255, 0.3);
+      }
+
+      .scenario-p-badge.p2 {
+        background: rgba(167, 139, 250, 0.15);
+        color: #C4B5FD;
+        border: 1px solid rgba(167, 139, 250, 0.3);
+      }
+
+      .scenario-card-title {
+        font-size: 12px;
+        font-weight: 600;
+        color: var(--text-primary);
+      }
+
+      .scenario-card-reason {
+        font-size: 11px;
+        color: var(--text-secondary);
+        background: rgba(0, 0, 0, 0.3);
+        padding: 6px 8px;
+        border-radius: 2px;
+        border-left: 2px solid #A78BFA;
       }
 
       /* Finding Alert Box */
@@ -771,6 +916,7 @@
           </div>
           <div style="font-family:var(--font-mono);font-size:10px;color:var(--text-secondary);display:flex;flex-direction:column;gap:3px">
             <div>CHROMIUM: <span style="color:var(--mint-green)">ACTIVE</span></div>
+            <div>AI BRAIN: <span style="color:#C4B5FD">GEMMA 2</span></div>
             <div>AUTONOMY: <span style="color:var(--cyan-neon)">ENABLED</span></div>
             <div>PORT: <span>4173 / 4300</span></div>
           </div>
@@ -792,6 +938,12 @@
             <span>WORKSPACE</span> // <span>SYSTEM</span> // <strong>REAL-TIME EXECUTION</strong>
           </div>
           <div class="header-actions">
+            <span class="chip" style="background:rgba(167,139,250,0.12);border:1px solid rgba(167,139,250,0.35);color:#C4B5FD;font-weight:700">
+              🧠 REASONING: <span id="header-model-name">GEMMA 2 (gemma-2-9b-it)</span>
+            </span>
+            <span class="chip" style="background:rgba(0,240,255,0.08);border:1px solid rgba(0,240,255,0.3);color:var(--cyan-neon)">
+              GEMMA CALLS: <strong id="header-gemma-calls" style="color:#fff">0</strong>
+            </span>
             <span id="agent-state-chip" class="chip chip-ready">● AGENT READY</span>
             <a href="/artifacts/latest/report.html" target="_blank" class="cyber-link-btn" style="font-size:11px">LATEST REPORT ↗</a>
           </div>
@@ -802,7 +954,7 @@
           <section class="mission-console">
             <div class="console-head">
               <h2><span>[ ⚡ ]</span> INITIATE AUTONOMOUS QA MISSION</h2>
-              <span style="font-family:var(--font-mono);font-size:10px;color:var(--text-muted)">MODEL: CHROMIUM DYNAMIC EXPLORATION</span>
+              <span style="font-family:var(--font-mono);font-size:10px;color:var(--text-muted)">AI REASONING: GOOGLE GEMMA 2 + PLAYWRIGHT RUNNER</span>
             </div>
             <div class="console-body">
               <form id="run-form">
@@ -849,50 +1001,92 @@
               <div class="metric-sub">0 False Positives</div>
             </div>
             <div class="metric-card">
-              <div class="metric-label">ASSERTION CONFIDENCE</div>
-              <div class="metric-value" style="color:var(--cyan-neon)">95%</div>
-              <div class="metric-sub">Deterministic Browser Proof</div>
+              <div class="metric-label">GEMMA AI REASONING</div>
+              <div id="metric-gemma-val" class="metric-value" style="color:#C4B5FD;font-size:15px;line-height:28px">GEMMA 2</div>
+              <div id="metric-gemma-sub" class="metric-sub">Inferences: 0 · 95% Conf</div>
             </div>
           </section>
 
           <!-- 2-Column Telemetry Grid -->
           <div class="telemetry-grid">
-            <!-- Left Column: Pipeline & Live Stream -->
+            <!-- Left Column: Pipeline & Dual Live Stream -->
             <section class="panel" id="telemetry">
               <div class="panel-header">
-                <div class="panel-title"><span>[ ☵ ]</span> LIVE EXECUTION TELEMETRY</div>
+                <div class="panel-title"><span>[ ☵ ]</span> LIVE EXECUTION TELEMETRY &amp; GEMMA REASONING</div>
                 <span id="progress-percent" style="font-family:var(--font-mono);font-size:10px;color:var(--cyan-neon)">100% COMPLETED</span>
               </div>
 
               <!-- Pipeline Stepper -->
               <div class="pipeline-track">
                 <div id="step-discover" class="pipe-step done">01 DISCOVERY</div>
-                <div id="step-analyze" class="pipe-step done">02 ANALYSIS</div>
-                <div id="step-execute" class="pipe-step done">03 EXECUTE</div>
-                <div id="step-assert" class="pipe-step done">04 ASSERTION</div>
-                <div id="step-evidence" class="pipe-step done">05 EVIDENCE</div>
+                <div id="step-analyze" class="pipe-step done">02 GEMMA PLAN</div>
+                <div id="step-execute" class="pipe-step done">03 PLAYWRIGHT</div>
+                <div id="step-assert" class="pipe-step done">04 VERIFICATION</div>
+                <div id="step-evidence" class="pipe-step done">05 DOSSIER</div>
               </div>
 
-              <!-- Terminal Log Stream -->
-              <div id="terminal-feed" class="terminal-feed">
-                <div class="log-row">
-                  <span class="log-time">[13:00:00]</span>
-                  <span class="log-tag">[SYSTEM]</span>
-                  <span class="log-text">Agent online. Awaiting mission parameters.</span>
+              <!-- Dual Terminal Container (Browser Telemetry + Gemma Thoughts) -->
+              <div class="dual-terminal-container">
+                <!-- Left Stream: Browser Playwright Telemetry -->
+                <div class="terminal-pane">
+                  <div class="terminal-pane-head">
+                    <span>[ ☵ ] BROWSER TELEMETRY (PLAYWRIGHT)</span>
+                    <span class="live-dot-tag">● LIVE</span>
+                  </div>
+                  <div id="terminal-feed" class="terminal-feed">
+                    <div class="log-row">
+                      <span class="log-time">[13:00:00]</span>
+                      <span class="log-tag">[SYSTEM]</span>
+                      <span class="log-text">Browser engine online. Awaiting mission parameters.</span>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- Right Stream: Gemma Reasoning Thoughts -->
+                <div class="terminal-pane">
+                  <div class="terminal-pane-head gemma">
+                    <span>[ 🧠 ] GEMMA REASONING STREAM</span>
+                    <span class="gemma-chip">JOBS 1–4</span>
+                  </div>
+                  <div id="gemma-feed" class="terminal-feed gemma-feed">
+                    <div class="log-row">
+                      <span class="log-time">[13:00:00]</span>
+                      <span class="log-tag gemma-plan">[GEMMA:PLAN]</span>
+                      <span class="log-text">Cognitive brain initialized. Ready to synthesize test coverage.</span>
+                    </div>
+                  </div>
                 </div>
               </div>
 
               <!-- Finding Box (shows when bugs exist) -->
-              <div id="finding-box" class="finding-dossier">
+              <div id="finding-box" class="finding-dossier" style="display:none">
                 <div class="finding-header">
-                  <span class="finding-title">⚠ CONFIRMED DEFECT: MISMATCHED PASSWORD ACCEPTED</span>
-                  <span class="finding-badge">SEVERITY: HIGH</span>
+                  <span id="finding-title" class="finding-title">⚠ CONFIRMED DEFECT: MISMATCHED PASSWORD ACCEPTED</span>
+                  <span id="finding-badge" class="finding-badge">SEVERITY: HIGH</span>
                 </div>
                 <div id="finding-detail" class="finding-detail">
                   Form accepted invalid registration when passwords did not match. Success confirmation element found: "Welcome to Meridian"
                 </div>
-                <div class="finding-assertion">
+                <div id="finding-assertion" class="finding-assertion">
                   ASSERTION: <code>assert_form_rejected(page) === true [FAILED]</code>
+                </div>
+
+                <!-- Gemma Root Cause & Developer Fix Box -->
+                <div id="finding-gemma-box" style="margin-top:10px;padding:12px 14px;background:rgba(0,240,255,0.04);border:1px solid rgba(0,240,255,0.25);border-radius:3px;display:flex;flex-direction:column;gap:6px">
+                  <div style="display:flex;align-items:center;justify-content:space-between">
+                    <span style="font-family:var(--font-mono);font-size:10px;font-weight:700;color:var(--cyan-neon)">🧠 GEMMA 2 TRIAGE &amp; ROOT-CAUSE INVESTIGATION</span>
+                    <span id="gemma-confidence-badge" style="font-family:var(--font-mono);font-size:9px;color:var(--mint-green);background:rgba(78,222,163,0.15);padding:1px 6px;border-radius:2px">95% CONFIRMED BUG</span>
+                  </div>
+                  <div id="gemma-why-text" style="font-size:11px;color:var(--text-secondary)">
+                    <strong>Why Confirmed:</strong> Observed application state contains success confirmation despite invalid credentials.
+                  </div>
+                  <div id="gemma-root-cause" style="font-size:11px;color:var(--text-primary)">
+                    <strong>Root Cause:</strong> Registration handler does not compare password with confirmPassword.
+                  </div>
+                  <div style="margin-top:4px">
+                    <span style="font-family:var(--font-mono);font-size:9px;color:var(--text-muted);text-transform:uppercase">Recommended Fix:</span>
+                    <pre style="margin-top:4px;padding:6px 10px;background:#090C10;border:1px solid var(--border-subtle);border-radius:2px;font-family:var(--font-mono);font-size:10px;color:var(--mint-green);overflow-x:auto"><code id="gemma-code-fix">if (req.body.password !== req.body.confirmPassword) return res.status(400).send('Passwords must match.');</code></pre>
+                  </div>
                 </div>
               </div>
             </section>
@@ -927,6 +1121,63 @@ test("Complete registration with valid data", async ({ page }) => {
               </div>
             </section>
           </div>
+
+          <!-- Autonomous Test Matrix (Planned by Gemma 2) -->
+          <section class="panel" style="margin-top:20px">
+            <div class="panel-header">
+              <div class="panel-title">
+                <span>[ ❖ ]</span> SYNTHESIZED TEST COVERAGE MATRIX
+                <span class="gemma-chip" style="margin-left:6px">JOB 1: GEMMA TEST PLANNER</span>
+              </div>
+              <span id="matrix-count" style="font-family:var(--font-mono);font-size:10px;color:var(--cyan-neon)">3 SCENARIOS SYNTHESIZED</span>
+            </div>
+            <div id="test-matrix-container" style="padding:16px 18px;display:grid;grid-template-columns:repeat(auto-fit, minmax(280px, 1fr));gap:14px">
+              <div class="scenario-card">
+                <div class="scenario-header">
+                  <span class="scenario-p-badge p0">P0 NEGATIVE</span>
+                  <span style="font-family:var(--font-mono);font-size:9px;color:var(--crimson-red)">✗ DEFECT CAUGHT</span>
+                </div>
+                <div class="scenario-card-title">1. Submit mismatched passwords</div>
+                <div class="scenario-card-reason">
+                  <strong style="color:#C4B5FD">Why Gemma planned this:</strong> Validates that differing confirmation credentials trigger failure and prevent account creation.
+                </div>
+                <div style="font-family:var(--font-mono);font-size:10px;color:var(--text-muted);display:flex;justify-content:space-between;margin-top:2px">
+                  <span>Planned by: Gemma 2</span>
+                  <span>4 steps</span>
+                </div>
+              </div>
+
+              <div class="scenario-card">
+                <div class="scenario-header">
+                  <span class="scenario-p-badge p1">P1 POSITIVE</span>
+                  <span style="font-family:var(--font-mono);font-size:9px;color:var(--mint-green)">✓ VERIFIED PASS</span>
+                </div>
+                <div class="scenario-card-title">2. Complete valid registration</div>
+                <div class="scenario-card-reason">
+                  <strong style="color:#C4B5FD">Why Gemma planned this:</strong> Verifies the primary happy path customer conversion with complete valid inputs.
+                </div>
+                <div style="font-family:var(--font-mono);font-size:10px;color:var(--text-muted);display:flex;justify-content:space-between;margin-top:2px">
+                  <span>Planned by: Gemma 2</span>
+                  <span>5 steps</span>
+                </div>
+              </div>
+
+              <div class="scenario-card">
+                <div class="scenario-header">
+                  <span class="scenario-p-badge p2">P2 BOUNDARY</span>
+                  <span style="font-family:var(--font-mono);font-size:9px;color:var(--mint-green)">✓ VERIFIED PASS</span>
+                </div>
+                <div class="scenario-card-title">3. Submit empty required fields</div>
+                <div class="scenario-card-reason">
+                  <strong style="color:#C4B5FD">Why Gemma planned this:</strong> Tests client/server boundary enforcement preventing blank required submission.
+                </div>
+                <div style="font-family:var(--font-mono);font-size:10px;color:var(--text-muted);display:flex;justify-content:space-between;margin-top:2px">
+                  <span>Planned by: Gemma 2</span>
+                  <span>3 steps</span>
+                </div>
+              </div>
+            </div>
+          </section>
         </div>
       </main>
     </div>
@@ -935,14 +1186,28 @@ test("Complete registration with valid data", async ({ page }) => {
       const form = document.querySelector("#run-form");
       const button = document.querySelector("#submit-button");
       const terminal = document.querySelector("#terminal-feed");
+      const gemmaFeed = document.querySelector("#gemma-feed");
       const missionList = document.querySelector("#mission-list");
       const metricScenarios = document.querySelector("#metric-scenarios");
       const metricPassed = document.querySelector("#metric-passed");
       const metricBugs = document.querySelector("#metric-bugs");
+      const metricGemmaVal = document.querySelector("#metric-gemma-val");
+      const metricGemmaSub = document.querySelector("#metric-gemma-sub");
+      const headerModelName = document.querySelector("#header-model-name");
+      const headerGemmaCalls = document.querySelector("#header-gemma-calls");
       const agentState = document.querySelector("#agent-state-chip");
       const progressPercent = document.querySelector("#progress-percent");
       const findingBox = document.querySelector("#finding-box");
+      const findingTitle = document.querySelector("#finding-title");
+      const findingBadge = document.querySelector("#finding-badge");
       const findingDetail = document.querySelector("#finding-detail");
+      const findingAssertion = document.querySelector("#finding-assertion");
+      const gemmaConfidenceBadge = document.querySelector("#gemma-confidence-badge");
+      const gemmaWhyText = document.querySelector("#gemma-why-text");
+      const gemmaRootCause = document.querySelector("#gemma-root-cause");
+      const gemmaCodeFix = document.querySelector("#gemma-code-fix");
+      const testMatrixContainer = document.querySelector("#test-matrix-container");
+      const matrixCount = document.querySelector("#matrix-count");
       const missionCount = document.querySelector("#mission-count");
 
       function applyPreset(type) {
@@ -993,7 +1258,7 @@ test("Complete registration with valid data", async ({ page }) => {
       });
 
       function escapeHtml(t) {
-        return String(t).replace(/[&<>"']/g, c => ({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;' })[c]);
+        return String(t || "").replace(/[&<>"']/g, c => ({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;' })[c]);
       }
 
       function formatTime(iso) {
@@ -1002,6 +1267,21 @@ test("Complete registration with valid data", async ({ page }) => {
 
       async function refresh() {
         try {
+          // 1. Fetch Gemma engine stats
+          try {
+            const gemmaRes = await fetch("/api/gemma");
+            if (gemmaRes.ok) {
+              const gStats = await gemmaRes.json();
+              if (headerModelName) headerModelName.textContent = `GEMMA 2 (${gStats.model})`;
+              if (headerGemmaCalls) headerGemmaCalls.textContent = gStats.callsCount;
+              if (metricGemmaVal) metricGemmaVal.textContent = gStats.model.toUpperCase();
+              if (metricGemmaSub) {
+                metricGemmaSub.textContent = `Inferences: ${gStats.callsCount} · ${gStats.hasApiKey ? 'Hosted API' : 'Resilient Heuristic'}`;
+              }
+            }
+          } catch {}
+
+          // 2. Fetch runs
           const res = await fetch("/api/runs");
           const runs = await res.json();
           missionCount.textContent = `${runs.length} MISSIONS`;
@@ -1039,7 +1319,7 @@ test("Complete registration with valid data", async ({ page }) => {
             document.querySelector("#step-assert").className = `pipe-step ${isDone || phase === "tested" ? "done" : ""}`;
             document.querySelector("#step-evidence").className = `pipe-step ${isDone ? "done" : ""}`;
 
-            // Terminal Logs
+            // Left Stream: Browser Telemetry Logs
             const events = latest.events || [];
             terminal.innerHTML = events.map(ev => {
               const tagClass = ev.type === "finding" ? "finding" : ev.type === "complete" ? "pass" : "";
@@ -1050,16 +1330,84 @@ test("Complete registration with valid data", async ({ page }) => {
                 <span class="log-tag ${tagClass}">[${escapeHtml(label.toUpperCase())}]</span>
                 <span class="log-text">${escapeHtml(detail)}</span>
               </div>`;
-            }).join("") || `<div class="log-row"><span class="log-time">[${formatTime(new Date())}]</span><span class="log-tag">[READY]</span><span class="log-text">Agent awaiting commands.</span></div>`;
+            }).join("") || `<div class="log-row"><span class="log-time">[${formatTime(new Date())}]</span><span class="log-tag">[READY]</span><span class="log-text">Browser engine awaiting commands.</span></div>`;
             terminal.scrollTop = terminal.scrollHeight;
 
-            // Finding Box
-            const finding = (latest.events || []).find(e => e.type === "finding");
+            // Right Stream: Gemma Reasoning Stream
+            const gemmaThoughts = latest.gemmaThoughts || (latest.gemmaStats && latest.gemmaStats.thoughts) || [];
+            if (gemmaFeed && gemmaThoughts.length > 0) {
+              gemmaFeed.innerHTML = gemmaThoughts.map(t => {
+                let tagClass = "gemma-plan";
+                const tag = (t.tag || "").toUpperCase();
+                if (tag.includes("EXECUTE")) tagClass = "gemma-exec";
+                else if (tag.includes("VERIFY")) tagClass = "gemma-verify";
+                else if (tag.includes("CLASSIFY")) tagClass = "gemma-classify";
+                else if (tag.includes("DIAGNOSE")) tagClass = "gemma-diagnose";
+                return `<div class="log-row">
+                  <span class="log-time">[${formatTime(t.at)}]</span>
+                  <span class="log-tag ${tagClass}">[${escapeHtml(t.tag || "GEMMA")}]</span>
+                  <span class="log-text">${escapeHtml(t.text)}</span>
+                </div>`;
+              }).join("");
+              gemmaFeed.scrollTop = gemmaFeed.scrollHeight;
+            }
+
+            // Finding Box with Gemma Cognitive Diagnosis
+            const finding = latest.latestFinding || (latest.events || []).find(e => e.type === "finding");
             if (finding) {
               findingBox.style.display = "flex";
-              findingDetail.textContent = finding.detail || "Defect detected during validation execution.";
+              if (findingTitle) findingTitle.textContent = `⚠ CONFIRMED DEFECT: ${(finding.label || "MISMATCHED PASSWORD ACCEPTED").toUpperCase()}`;
+              if (findingBadge) findingBadge.textContent = `SEVERITY: ${(finding.severity || "HIGH").toUpperCase()}`;
+              if (findingDetail) findingDetail.textContent = finding.detail || "Defect detected during validation execution.";
+              if (findingAssertion) findingAssertion.innerHTML = `ASSERTION: <code>${escapeHtml(finding.assertion || "assert_form_rejected(page) === true [FAILED]")}</code>`;
+              if (finding.gemmaWhy && gemmaWhyText) {
+                gemmaWhyText.innerHTML = `<strong>Why Confirmed:</strong> ${escapeHtml(finding.gemmaWhy)}`;
+              }
+              if (finding.rootCause && gemmaRootCause) {
+                gemmaRootCause.innerHTML = `<strong>Root Cause:</strong> ${escapeHtml(finding.rootCause)}`;
+              }
+              if (finding.developerFix && gemmaCodeFix) {
+                gemmaCodeFix.textContent = finding.developerFix;
+              }
+              if (finding.confidence && gemmaConfidenceBadge) {
+                gemmaConfidenceBadge.textContent = `${(finding.confidence * 100).toFixed(0)}% CONFIRMED BUG`;
+              }
             } else if (latest.summary && latest.summary.confirmedBugs === 0) {
               findingBox.style.display = "none";
+            }
+
+            // Render Test Matrix (Scenarios planned by Gemma)
+            // Fetch detailed run record if completed
+            if (latest.status === "completed" && !latest._fetchedDetails) {
+              latest._fetchedDetails = true;
+              fetch(`/api/runs/${latest.id}`).then(r => r.json()).then(runData => {
+                if (runData.result?.plan?.scenarios) {
+                  const scList = runData.result.plan.scenarios;
+                  const resMap = new Map((runData.result.scenarioResults || []).map(r => [r.scenario.id, r.status]));
+                  matrixCount.textContent = `${scList.length} SCENARIOS SYNTHESIZED`;
+                  testMatrixContainer.innerHTML = scList.map((s, idx) => {
+                    const st = resMap.get(s.id) || "pass";
+                    const pClass = (s.priority || "p1").toLowerCase();
+                    const statusLabel = st === "pass" ? "✓ VERIFIED PASS" : st === "fail" ? "✗ DEFECT CAUGHT" : "⚠ ERROR";
+                    return `
+                      <div class="scenario-card">
+                        <div class="scenario-header">
+                          <span class="scenario-p-badge ${pClass}">${escapeHtml(s.priority)} ${escapeHtml((s.type || "SCENARIO").toUpperCase())}</span>
+                          <span style="font-family:var(--font-mono);font-size:9px;color:${st === 'fail' ? 'var(--crimson-red)' : 'var(--mint-green)'}">${statusLabel}</span>
+                        </div>
+                        <div class="scenario-card-title">${idx + 1}. ${escapeHtml(s.title)}</div>
+                        <div class="scenario-card-reason">
+                          <strong style="color:#C4B5FD">Why Gemma planned this:</strong> ${escapeHtml(s.reason || "Autonomous test synthesized from acceptance criteria")}
+                        </div>
+                        <div style="font-family:var(--font-mono);font-size:10px;color:var(--text-muted);display:flex;justify-content:space-between;margin-top:2px">
+                          <span>Planned by: ${escapeHtml(s.plannedBy || "Gemma 2")}</span>
+                          <span>${s.steps ? s.steps.length : 0} steps</span>
+                        </div>
+                      </div>
+                    `;
+                  }).join("");
+                }
+              }).catch(() => {});
             }
 
             // Mission history list

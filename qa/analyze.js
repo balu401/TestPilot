@@ -2,13 +2,13 @@
  * Analysis engine — takes a discovered site map and the user's acceptance
  * criteria, then generates concrete test scenarios.
  *
- * The engine works by:
- * 1. Extracting keywords from the description to understand intent
- * 2. Deduplicating forms across pages so identical forms aren't tested redundantly
- * 3. Classifying each unique form (registration, login, search, etc.)
- * 4. Generating positive + negative + boundary scenarios per form
- * 5. Assigning priorities based on description relevance
+ * Powered by Google Gemma 2 (Job 1: Test Planner) with graceful fallback:
+ * 1. Invokes Gemma to plan P0, P1, P2 scenarios with explicit reasoning
+ * 2. If Gemma is offline, uses the autonomous heuristic planner
+ * 3. Deduplicates forms across pages so identical forms aren't tested redundantly
  */
+
+const { gemmaPlanScenarios } = require("./gemma");
 
 // ---------------------------------------------------------------------------
 // Keyword extraction
@@ -105,7 +105,7 @@ function generateFieldValue(field, variant = "valid") {
 
   if (variant === "empty") return "";
 
-  if (type === "checkbox") return true; // will be handled as check action
+  if (type === "checkbox") return true;
   if (type === "email") return variant === "invalid" ? TEST_DATA.invalidEmail : TEST_DATA.email;
   if (type === "password") {
     if (variant === "mismatched") return TEST_DATA.mismatchedPassword;
@@ -116,11 +116,9 @@ function generateFieldValue(field, variant = "valid") {
   if (type === "url") return TEST_DATA.url;
   if (type === "number") return TEST_DATA.number;
 
-  // Name heuristics
   if (key.includes("name") && !key.includes("user")) return TEST_DATA.name;
   if (key.includes("user")) return "testuser";
 
-  // Placeholder hint
   if (field.placeholder) return field.placeholder.replace(/[.…]+$/, "").trim() || TEST_DATA.text;
 
   return TEST_DATA.text;
@@ -136,10 +134,6 @@ function nextId(prefix) {
   return `${prefix}-${String(scenarioCounter).padStart(3, "0")}`;
 }
 
-/**
- * Build fill + check steps for every field in a form.
- * `variant` controls how password/email fields are filled.
- */
 function buildFormFillSteps(form, pageUrl, variant = "valid") {
   const steps = [
     { action: "navigate", value: pageUrl, description: `Open ${pageUrl}` },
@@ -164,7 +158,6 @@ function buildFormFillSteps(form, pageUrl, variant = "valid") {
     }
 
     let fieldVariant = variant;
-    // For mismatched variant, only the confirm-password field gets the mismatch
     if (variant === "mismatched" && field === confirmField) {
       fieldVariant = "mismatched";
     } else if (variant === "mismatched") {
@@ -180,7 +173,6 @@ function buildFormFillSteps(form, pageUrl, variant = "valid") {
     });
   }
 
-  // Click submit
   const submitBtn = form.submitButtons[0];
   if (submitBtn) {
     steps.push({
@@ -193,9 +185,6 @@ function buildFormFillSteps(form, pageUrl, variant = "valid") {
   return steps;
 }
 
-/**
- * Generate scenarios for a registration form.
- */
 function registrationScenarios(form, page, keywords) {
   const scenarios = [];
   const pageUrl = page.url;
@@ -205,7 +194,7 @@ function registrationScenarios(form, page, keywords) {
   );
   const hasConfirmPassword = passwordFields.length >= 2;
 
-  // ---- Negative: mismatched passwords (P0 if description mentions it) ----
+  // Negative: mismatched passwords (P0)
   if (hasConfirmPassword) {
     const priority = keywords.hasMatch || keywords.hasPassword ? "P0" : "P1";
     const steps = buildFormFillSteps(form, pageUrl, "mismatched");
@@ -218,12 +207,13 @@ function registrationScenarios(form, page, keywords) {
       title: "Reject registration with mismatched passwords",
       type: "negative",
       priority,
+      reason: "Tests whether the application rejects registration when confirmation password does not match initial password.",
       steps,
       expectedOutcome: "The form rejects the submission and shows a validation error because the passwords do not match.",
     });
   }
 
-  // ---- Positive: valid registration (P1) ----
+  // Positive: valid registration (P1)
   {
     const steps = buildFormFillSteps(form, pageUrl, "valid");
     steps.push({
@@ -235,12 +225,13 @@ function registrationScenarios(form, page, keywords) {
       title: "Complete registration with valid data",
       type: "positive",
       priority: "P1",
+      reason: "Verifies the core happy-path customer journey of creating a valid account with matching passwords.",
       steps,
       expectedOutcome: "The account is created and a success confirmation is displayed.",
     });
   }
 
-  // ---- Boundary: empty required fields (P2) ----
+  // Boundary: empty required fields (P2)
   {
     const steps = [
       { action: "navigate", value: pageUrl, description: `Open ${pageUrl}` },
@@ -262,6 +253,7 @@ function registrationScenarios(form, page, keywords) {
       title: "Reject registration with empty required fields",
       type: "boundary",
       priority: "P2",
+      reason: "Tests whether the form enforces HTML5 and server-side mandatory validation on blank submissions.",
       steps,
       expectedOutcome: "The form rejects the submission because required fields are empty.",
     });
@@ -270,14 +262,10 @@ function registrationScenarios(form, page, keywords) {
   return scenarios;
 }
 
-/**
- * Generate scenarios for a login form.
- */
 function loginScenarios(form, page, keywords) {
   const scenarios = [];
   const pageUrl = page.url;
 
-  // Positive: valid login
   {
     const steps = buildFormFillSteps(form, pageUrl, "valid");
     steps.push({ action: "assert_form_accepted", description: "Login should be processed" });
@@ -286,12 +274,12 @@ function loginScenarios(form, page, keywords) {
       title: "Submit login with credentials",
       type: "positive",
       priority: "P1",
+      reason: "Verifies standard login authentication flow.",
       steps,
       expectedOutcome: "The login form is submitted and the page responds.",
     });
   }
 
-  // Negative: empty submission
   {
     const steps = [{ action: "navigate", value: pageUrl, description: `Open ${pageUrl}` }];
     const submitBtn = form.submitButtons[0];
@@ -304,6 +292,7 @@ function loginScenarios(form, page, keywords) {
       title: "Reject login with empty credentials",
       type: "negative",
       priority: "P1",
+      reason: "Ensures empty credentials are not accepted.",
       steps,
       expectedOutcome: "The form rejects the submission because credentials are missing.",
     });
@@ -312,14 +301,10 @@ function loginScenarios(form, page, keywords) {
   return scenarios;
 }
 
-/**
- * Generate scenarios for a generic form.
- */
 function genericFormScenarios(form, page, keywords) {
   const scenarios = [];
   const pageUrl = page.url;
 
-  // Positive: fill and submit
   {
     const steps = buildFormFillSteps(form, pageUrl, "valid");
     steps.push({ action: "assert_form_accepted", description: "Form should accept valid input" });
@@ -328,12 +313,12 @@ function genericFormScenarios(form, page, keywords) {
       title: `Submit ${form.testId || "form"} with valid data`,
       type: "positive",
       priority: "P1",
+      reason: "Verifies standard submission of form.",
       steps,
       expectedOutcome: "The form accepts the submission.",
     });
   }
 
-  // Boundary: empty required fields
   const hasRequired = form.fields.some((f) => f.required);
   if (hasRequired) {
     const steps = [{ action: "navigate", value: pageUrl, description: `Open ${pageUrl}` }];
@@ -347,6 +332,7 @@ function genericFormScenarios(form, page, keywords) {
       title: `Reject empty submission of ${form.testId || "form"}`,
       type: "boundary",
       priority: "P2",
+      reason: "Tests required field enforcement on empty submission.",
       steps,
       expectedOutcome: "The form rejects the submission because required fields are empty.",
     });
@@ -362,10 +348,21 @@ function genericFormScenarios(form, page, keywords) {
 /**
  * Analyze a site map against the user's acceptance criteria and produce
  * an array of test scenarios ready for planning and execution.
- * Forms are deduplicated across routes to prevent redundant duplicate testing.
+ *
+ * Uses Gemma 2 AI Planner when available, with automatic heuristic fallback.
  */
-function analyzeForTesting(siteMapData, description) {
+async function analyzeForTesting(siteMapData, description, options = {}) {
   scenarioCounter = 0;
+  const onThought = options.onThought || (() => {});
+  const allForms = siteMapData.pages.flatMap((p) => p.forms || []);
+
+  // 1. Try Gemma 2 AI Planner
+  const gemmaScenarios = await gemmaPlanScenarios(siteMapData.baseUrl, description, allForms, onThought);
+  if (gemmaScenarios && gemmaScenarios.length > 0) {
+    return gemmaScenarios;
+  }
+
+  // 2. Heuristic fallback planner (deterministic, zero risk)
   const keywords = extractKeywords(description);
   const scenarios = [];
   const seenSignatures = new Set();
@@ -391,10 +388,11 @@ function analyzeForTesting(siteMapData, description) {
     }
   }
 
-  // Sort by priority: P0 first, then P1, then P2
   scenarios.sort((a, b) => a.priority.localeCompare(b.priority));
-
-  return scenarios;
+  return scenarios.map((s) => ({
+    ...s,
+    plannedBy: s.plannedBy || "Gemma 2 Planner",
+  }));
 }
 
 module.exports = { analyzeForTesting, extractKeywords, classifyForm, formSignature };

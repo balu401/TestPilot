@@ -1,9 +1,14 @@
+try {
+  process.loadEnvFile();
+} catch {}
+
 const express = require("express");
 const path = require("node:path");
 const fs = require("node:fs/promises");
 const crypto = require("node:crypto");
 const { run } = require("../qa/run");
 const { writeReport } = require("../qa/report");
+const { getGemmaStats } = require("../qa/gemma");
 
 const app = express();
 const port = Number(process.env.PORT || 4300);
@@ -13,6 +18,10 @@ const runs = new Map();
 
 app.use(express.json({ limit: "32kb" }));
 app.use(express.static(dashboardRoot));
+
+app.get("/api/gemma", (req, res) => {
+  res.json(getGemmaStats());
+});
 
 const legalPage = (title, sections) => `<!doctype html>
 <html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
@@ -63,6 +72,9 @@ app.post("/api/runs", async (req, res) => {
       progress: 0,
       phase: "queued",
       events: [],
+      gemmaThoughts: [],
+      latestFinding: null,
+      gemmaStats: getGemmaStats(),
       createdAt: new Date().toISOString(),
     };
     runs.set(id, record);
@@ -79,13 +91,28 @@ app.post("/api/runs", async (req, res) => {
           onEvent: async (event) => {
             const current = runs.get(id);
             if (!current) return;
-            const events = [...(current.events || []), event].slice(-30);
-            runs.set(id, {
-              ...current,
-              phase: event.phase || current.phase,
-              progress: event.progress ?? current.progress,
-              events,
-            });
+
+            if (event.type === "gemmaThought") {
+              const gemmaThoughts = [...(current.gemmaThoughts || []), event].slice(-60);
+              runs.set(id, {
+                ...current,
+                gemmaThoughts,
+                gemmaStats: getGemmaStats(),
+              });
+            } else {
+              const events = [...(current.events || []), event].slice(-40);
+              const update = {
+                ...current,
+                phase: event.phase || current.phase,
+                progress: event.progress ?? current.progress,
+                events,
+                gemmaStats: getGemmaStats(),
+              };
+              if (event.type === "finding") {
+                update.latestFinding = event;
+              }
+              runs.set(id, update);
+            }
           },
         });
         await writeReport(artifactDir);
@@ -96,6 +123,7 @@ app.post("/api/runs", async (req, res) => {
           phase: "complete",
           completedAt: new Date().toISOString(),
           summary: result.summary,
+          gemmaStats: getGemmaStats(),
         });
       } catch (error) {
         runs.set(id, {
@@ -126,7 +154,7 @@ app.get("/api/runs/:id", async (req, res) => {
       result = null;
     }
   }
-  res.json({ ...record, result });
+  res.json({ ...record, result, gemmaStats: getGemmaStats() });
 });
 
 app.get("/api/runs/:id/report", (req, res) => {

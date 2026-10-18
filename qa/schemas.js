@@ -92,6 +92,8 @@ const testScenario = z.object({
   priority: z.enum(["P0", "P1", "P2"]),
   steps: z.array(stepInstruction).min(1),
   expectedOutcome: z.string(),
+  reason: z.string().optional(),
+  plannedBy: z.string().optional(),
 });
 
 const qaPlan = z.object({
@@ -99,6 +101,8 @@ const qaPlan = z.object({
   description: z.string().min(1),
   scenarios: z.array(testScenario).min(1),
   generatedAt: z.string(),
+  plannedBy: z.string().optional(),
+  gemmaReason: z.string().optional(),
 });
 
 // ---------------------------------------------------------------------------
@@ -120,7 +124,7 @@ const bugFinding = z.object({
   id: z.string(),
   scenarioId: z.string(),
   title: z.string(),
-  classification: z.enum(["confirmed_bug", "potential_bug", "flaky", "environment_issue"]),
+  classification: z.enum(["confirmed_bug", "potential_bug", "flaky", "environment_issue", "automation_error", "environment_failure"]),
   severity: z.enum(["critical", "high", "medium", "low"]),
   confidence: z.number().min(0).max(1),
   reproduction: z.array(z.string()),
@@ -129,6 +133,9 @@ const bugFinding = z.object({
   assertion: z.string(),
   evidence: z.array(z.string()),
   detectedAt: z.string(),
+  gemmaVerdict: z.string().optional(),
+  gemmaWhy: z.string().optional(),
+  investigationCategory: z.enum(["confirmed_bug", "automation_error", "environment_failure"]).optional(),
 });
 
 const scenarioResult = z.object({
