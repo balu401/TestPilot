@@ -1,6 +1,6 @@
 const { test, expect } = require("@playwright/test");
 
-test("Successful registration with matching passwords and all required fields", async ({ page }) => {
+test("Successful registration with matching password and confirmation password", async ({ page }) => {
   await page.goto("http://127.0.0.1:4173");
   await page.getByTestId("name").fill("Test User");
   await page.getByTestId("email").fill("testuser@example.com");
