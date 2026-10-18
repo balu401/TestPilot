@@ -13,6 +13,10 @@
  *   - Resilient Fallback (Zero live-demo failure risk)
  */
 
+try {
+  process.loadEnvFile();
+} catch {}
+
 const fs = require("node:fs/promises");
 const path = require("node:path");
 
@@ -60,54 +64,68 @@ async function callGeminiApi(prompt, options = {}) {
     throw new Error("GEMINI_API_KEY is not set. Set it in .env or environment.");
   }
 
-  const model = options.model || getGemmaModel();
-  const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`;
-
-  gemmaCallCount += 1;
-  const parts = [];
-
-  // Multimodal image support (if imageBuffer provided)
-  if (options.imageBase64) {
-    parts.push({
-      inlineData: {
-        mimeType: options.imageMime || "image/png",
-        data: options.imageBase64,
-      },
-    });
+  const primaryModel = options.model || getGemmaModel();
+  const modelsToTry = [primaryModel];
+  if (primaryModel === "gemma-4-31b-it") {
+    modelsToTry.push("gemma-4-26b-a4b-it");
   }
 
-  parts.push({ text: prompt });
+  let lastErr = null;
+  for (const model of modelsToTry) {
+    try {
+      const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`;
+      gemmaCallCount += 1;
+      const parts = [];
 
-  const body = {
-    contents: [{ parts }],
-    generationConfig: {
-      temperature: options.temperature ?? 0.2,
-      maxOutputTokens: options.maxTokens ?? 2048,
-    },
-  };
+      // Multimodal image support (if imageBuffer provided)
+      if (options.imageBase64) {
+        parts.push({
+          inlineData: {
+            mimeType: options.imageMime || "image/png",
+            data: options.imageBase64,
+          },
+        });
+      }
 
-  if (options.jsonMode) {
-    body.generationConfig.responseMimeType = "application/json";
+      parts.push({ text: prompt });
+
+      const body = {
+        contents: [{ parts }],
+        generationConfig: {
+          temperature: options.temperature ?? 0.2,
+          maxOutputTokens: options.maxTokens ?? 2048,
+        },
+      };
+
+      if (options.jsonMode) {
+        body.generationConfig.responseMimeType = "application/json";
+      }
+
+      const res = await fetch(url, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(body),
+        signal: AbortSignal.timeout(options.timeout || 8000),
+      });
+
+      if (!res.ok) {
+        const errorText = await res.text();
+        throw new Error(`Gemini API error (${res.status}): ${errorText}`);
+      }
+
+      const json = await res.json();
+      const textOutput = json.candidates?.[0]?.content?.parts?.[0]?.text;
+      if (!textOutput) {
+        throw new Error("Empty response from Gemma via Gemini API");
+      }
+
+      return textOutput;
+    } catch (err) {
+      lastErr = err;
+    }
   }
 
-  const res = await fetch(url, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(body),
-  });
-
-  if (!res.ok) {
-    const errorText = await res.text();
-    throw new Error(`Gemini API error (${res.status}): ${errorText}`);
-  }
-
-  const json = await res.json();
-  const textOutput = json.candidates?.[0]?.content?.parts?.[0]?.text;
-  if (!textOutput) {
-    throw new Error("Empty response from Gemma via Gemini API");
-  }
-
-  return textOutput;
+  throw lastErr;
 }
 
 /**
@@ -128,6 +146,7 @@ async function callOllama(prompt, options = {}) {
       format: options.jsonMode ? "json" : undefined,
       options: { temperature: options.temperature ?? 0.2 },
     }),
+    signal: AbortSignal.timeout(3000),
   });
 
   if (!res.ok) {
@@ -227,7 +246,7 @@ Return ONLY a JSON array of objects with the following schema:
     if (Array.isArray(scenarios) && scenarios.length > 0) {
       const summaryReason = `Gemma planned ${scenarios.length} scenarios: ${scenarios.map((s) => `${s.title} (${s.priority})`).join(", ")}.`;
       const thought = recordThought("GEMMA:PLAN", summaryReason);
-      if (onThought) onThought(thought);
+      if (onThought) await onThought(thought);
 
       return scenarios.map((s) => ({
         ...s,
@@ -239,7 +258,7 @@ Return ONLY a JSON array of objects with the following schema:
       "GEMMA:PLAN",
       `Gemma API offline (${err.message}). Using autonomous heuristic QA planner fallback.`
     );
-    if (onThought) onThought(thought);
+    if (onThought) await onThought(thought);
   }
 
   return null; // Will trigger resilient heuristic fallback in analyze.js
@@ -283,12 +302,12 @@ Return ONLY JSON:
 
     const parsed = JSON.parse(raw.replace(/```json\n?|\n?```/g, "").trim());
     const thought = recordThought("GEMMA:VERIFY", `Visual verdict: ${parsed.whatISaw} (${parsed.verdict.toUpperCase()})`);
-    if (onThought) onThought(thought);
+    if (onThought) await onThought(thought);
 
     return parsed;
   } catch (err) {
     const thought = recordThought("GEMMA:VERIFY", `Visual check: Verified through deterministic browser assertions.`);
-    if (onThought) onThought(thought);
+    if (onThought) await onThought(thought);
     return null;
   }
 }
@@ -326,7 +345,7 @@ Return ONLY JSON:
       "GEMMA:CLASSIFY",
       `Failure classified as ${parsed.classification.toUpperCase()} (${(parsed.confidence * 100).toFixed(0)}% confidence). ${parsed.why}`
     );
-    if (onThought) onThought(thought);
+    if (onThought) await onThought(thought);
 
     return parsed;
   } catch (err) {
@@ -341,7 +360,7 @@ Return ONLY JSON:
       "GEMMA:CLASSIFY",
       `Classification: ${fallback.classification.toUpperCase()} (Confidence: 95%). ${fallback.why}`
     );
-    if (onThought) onThought(thought);
+    if (onThought) await onThought(thought);
     return fallback;
   }
 }
@@ -374,7 +393,7 @@ Return ONLY JSON:
       "GEMMA:DIAGNOSE",
       `Root Cause: ${parsed.rootCause} | Fix: ${parsed.developerFix}`
     );
-    if (onThought) onThought(thought);
+    if (onThought) await onThought(thought);
 
     return parsed;
   } catch (err) {
@@ -386,7 +405,7 @@ Return ONLY JSON:
       "GEMMA:DIAGNOSE",
       `Root Cause: ${fallback.rootCause}`
     );
-    if (onThought) onThought(thought);
+    if (onThought) await onThought(thought);
     return fallback;
   }
 }
