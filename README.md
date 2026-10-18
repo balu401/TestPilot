@@ -207,7 +207,7 @@ After any run, open the generated HTML report in your browser:
 
 The report includes:
 - Summary metrics (total scenarios, passed, failed, confirmed bugs).
-- Confirmed bugs with severity, confidence rating (95%), full reproduction steps, expected vs. actual outcomes, deterministic assertions, and screenshot proof.
+- Confirmed bugs with severity, confidence rating (95%), full reproduction steps, expected vs. actual outcomes, determinidstic assertions, and screenshot proof.
 - Complete step-by-step execution tables for every scenario with status badges and evidence links.
 
 ---
